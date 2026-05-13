@@ -444,9 +444,10 @@
       ① 单针纱长 L(mm) = X × 10 ÷ 100<br>
       ② 棉/涤：英支S直接使用；低弹丝D：S=5315÷D；氨纶D：S=5200÷D<br>
       ③ 单针重量 G = (L × 590.5) ÷ (S × 1000)<br>
-      ④ 原料占比 = (G × 该原料路数) ÷ Σ(G × 路数) × 100%  ← 路数参与占比<br>
-      ⑤ 日产量(kg) = Σ(G × 路数) × 总针数 × 转速 × 效率 × 1.44<br>
-      ⑥ 落布圈数 = 每圈布重 ÷ 每转重量(kg/转)
+      ④ 原料占比 = (G × 该原料路数) ÷ Σ(G × 路数) × 100%<br>
+      ⑤ 日产量(kg/天) = Σ(G × 路数) × 总针数 × 转速 × 效率 × 1.44 ÷ 1000<br>
+      ⑥ 日产值 = 日产量 × 单价<br>
+      ⑦ 落布圈数 = 日产量 ÷ 每圈布重
     </div>
   </div>
 
@@ -568,16 +569,15 @@
     if (canCalcProduction) {
       // 每转重量 = 各材料(单针G × 该材料路数) × 总针数
       // 物理含义：每路每转织Z针，材料i占了luShu_i路，故材料i每转用纱 = G_i × Z × luShu_i
+      // 豆包修正公式（2026-05-13）：
+      // G转(g/转) = (G1×路数1 + G2×路数2 + ...) × 总针数
       const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * Z;
-      // 每分钟产量(g)
-      const Q_min = G_rev * n * eta;
-      // 每天产量(kg) = Q_min × 60(min) × 24(h) / 1000(g/kg) = Q_min × 1.44
-      const Q_day = Q_min * 1.44;
+      // Q日(kg/天) = G转 × 转速 × 效率 × 1.44 ÷ 1000
+      const Q_day = G_rev * n * eta * 1.44 / 1000;
       // 每天产值
       const val_day = Q_day * price;
-      // 落布圈数 = 每圈布重(kg) ÷ 每转重量(kg/转)
-      const rev_kg = G_rev / 1000;
-      const doff = rev_kg > 0 ? rollW / rev_kg : 0;
+      // 落布圈数 = Q日 ÷ 每圈布重
+      const doff = Q_day / rollW;
 
       document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
       document.getElementById('dailyValue').textContent = val_day.toFixed(2);
