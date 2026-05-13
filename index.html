@@ -444,8 +444,9 @@
       ① 单针纱长 L(mm) = X × 10 ÷ 100<br>
       ② 棉/涤：英支S直接使用；低弹丝D：S=5315÷D；氨纶D：S=5200÷D<br>
       ③ 单针重量 G = (L × 590.5) ÷ (S × 1000)<br>
-      ④ 日产量(kg) = (ΣG × 总针数 × 路数) × 转速 × 效率 × 1.44<br>
-      ⑤ 路数不参与成分占比计算
+      ④ 原料占比 = (G × 该原料路数) ÷ Σ(G × 路数) × 100%  ← 路数参与占比<br>
+      ⑤ 日产量(kg) = Σ(G × 路数) × 总针数 × 转速 × 效率 × 1.44<br>
+      ⑥ 落布圈数 = 每圈布重 ÷ 每转重量(kg/转)
     </div>
   </div>
 
@@ -517,24 +518,24 @@
       const yarnLen = parseFloat(m.yarnLen) || 0;
       const luShu = parseFloat(m.luShu) || 0;
       if (!spec || !yarnLen) return null;
-      const L = yarnLen * 10 / 100;
+      const L = yarnLen * 10 / 100;         // 单针纱长(mm)
       const conv = UNIT_CONV[m.unit];
-      const S = conv ? conv.convert(spec) : spec;
+      const S = conv ? conv.convert(spec) : spec;  // 换算后英支
       if (!S || S <= 0) return null;
-      const G = (L * 590.5) / (S * 1000);
+      const G = (L * 590.5) / (S * 1000);   // 单针重量(g)
       return { ...m, L, S, G, luShu };
     }).filter(r => r !== null);
 
-    // ── 成分占比（独立于机台参数，始终计算）──
-    const showResult = mats.length > 0;
-    if (!showResult) {
+    if (mats.length === 0) {
       document.getElementById('resultSheet').style.display = 'none';
       return;
     }
 
-    const totalG = mats.reduce((s, r) => s + r.G, 0);
+    // ── 成分占比（考虑路数）──
+    // 每种原料的实际用纱量 = G_i × luShu_i（路数越多，占比越大）
+    const weightedG = mats.reduce((s, r) => s + r.G * r.luShu, 0);
     const propEls = mats.map(r => {
-      const pct = (r.G / totalG * 100);
+      const pct = weightedG > 0 ? (r.G * r.luShu / weightedG * 100) : 0;
       return { name: r.name || UNIT_CONV[r.unit]?.label || '', pct, id: r.id };
     });
 
@@ -565,21 +566,22 @@
     const canCalcProduction = Z > 0 && n > 0 && eta > 0 && totalLuShu > 0;
 
     if (canCalcProduction) {
-      // 严格按文档公式：G转 = (G1+G2+G3+G4) × 总针数 × 总路数
-      const G_rev = totalG * Z * totalLuShu;
+      // 每转重量 = 各材料(单针G × 该材料路数) × 总针数
+      // 物理含义：每路每转织Z针，材料i占了luShu_i路，故材料i每转用纱 = G_i × Z × luShu_i
+      const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * Z;
       // 每分钟产量(g)
       const Q_min = G_rev * n * eta;
-      // 每天产量(kg) = 每分钟产量(g) × 60 × 24 / 1000 = Q_min × 1.44
+      // 每天产量(kg) = Q_min × 60(min) × 24(h) / 1000(g/kg) = Q_min × 1.44
       const Q_day = Q_min * 1.44;
       // 每天产值
       const val_day = Q_day * price;
-      // 落布圈数 = 日产量(kg) ÷ 每圈布重(kg/圈)
+      // 落布圈数 = 每圈布重(kg) ÷ 每转重量(kg/转)
       const rev_kg = G_rev / 1000;
       const doff = rev_kg > 0 ? rollW / rev_kg : 0;
 
       document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
       document.getElementById('dailyValue').textContent = val_day.toFixed(2);
-      document.getElementById('doffRevol').textContent = Math.round(doff);
+      document.getElementById('doffRevol').textContent = doff.toFixed(1);
     } else {
       document.getElementById('dailyYield').textContent = '—';
       document.getElementById('dailyValue').textContent = '—';
