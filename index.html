@@ -2,718 +2,389 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>针织面料成本产量核算器</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>大圆机产量计算器</title>
 <style>
-  :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface-2: #232735;
-    --border: #2d3240;
-    --text: #e8eaed;
-    --text-2: #9aa0b0;
-    --text-3: #5c6272;
-    --accent: #4f8cff;
-    --accent-hover: #6ba0ff;
-    --accent-dim: rgba(79,140,255,0.12);
-    --green: #34d399;
-    --orange: #fb923c;
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f5f6fa;
+    color: #333;
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 32px 16px;
+    padding: 16px 12px 40px;
   }
-  .container { max-width: 1100px; width: 100%; }
-  header {
-    text-align: center;
-    margin-bottom: 40px;
-  }
-  header h1 {
-    font-size: 28px;
+  .app { max-width: 420px; margin: 0 auto; }
+
+  /* 标题 */
+  .header { text-align: center; margin-bottom: 20px; }
+  .header h1 {
+    font-size: 20px;
     font-weight: 700;
-    letter-spacing: -0.5px;
+    color: #2d3748;
+    letter-spacing: 0.5px;
   }
-  header h1 span { color: var(--accent); }
-  header p {
-    color: var(--text-2);
-    font-size: 14px;
-    margin-top: 8px;
-    line-height: 1.6;
-  }
-  .badge {
-    display: inline-block;
-    background: var(--accent-dim);
-    color: var(--accent);
-    font-size: 12px;
-    padding: 4px 12px;
-    border-radius: 20px;
+  .header h1 span { color: #4a7cf7; }
+
+  /* 区块卡片 */
+  .section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
     margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   }
-  .grid {
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: #eef1fb;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-title .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #4a7cf7;
+    display: inline-block;
+  }
+
+  /* 输入网格 */
+  .field-group { margin-bottom: 10px; }
+  .field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+  .field-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-  }
-  .panel-title {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
     gap: 8px;
   }
-  .panel-title .num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    background: var(--accent);
-    color: #fff;
-    font-size: 13px;
-    font-weight: 700;
-    border-radius: 50%;
+  .field-row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
   }
-  .panel-sub {
-    color: var(--text-2);
-    font-size: 13px;
-    margin-bottom: 20px;
-  }
-  .formula-box {
-    background: var(--surface-2);
-    border-radius: var(--radius-sm);
-    padding: 14px 16px;
-    margin-bottom: 20px;
-    font-size: 13px;
-    line-height: 1.7;
-    color: var(--text-2);
-    border-left: 3px solid var(--accent);
-  }
-  .formula-box .math {
-    color: var(--text);
-    font-family: 'Times New Roman', serif;
-    font-style: italic;
-    font-size: 14px;
-    padding: 4px 0;
-  }
-  .formula-box code {
-    background: rgba(255,255,255,0.06);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    color: var(--orange);
-  }
-  .field-group { margin-bottom: 16px; }
-  .field-group:last-child { margin-bottom: 0; }
-  .field-label {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-    font-weight: 500;
-    margin-bottom: 6px;
-  }
-  .field-label .hint {
-    color: var(--text-3);
-    font-weight: 400;
-    font-size: 12px;
-  }
+
   input, select {
     width: 100%;
-    padding: 10px 12px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text);
+    padding: 10px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #1a202c;
     font-size: 14px;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border 0.2s;
   }
-  input:focus, select:focus { border-color: var(--accent); }
-  input[type="number"] { -moz-appearance: textfield; }
-  input[type="number"]::-webkit-outer-spin-button,
-  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .material-row {
-    display: grid;
-    grid-template-columns: 1fr 90px 90px 40px;
-    gap: 8px;
-    align-items: end;
-    margin-bottom: 10px;
+  input:focus, select:focus { border-color: #4a7cf7; }
+  input::placeholder { color: #a0aec0; font-size: 12px; }
+  select { appearance: auto; }
+
+  /* 材料区块 - 每个材料独立 */
+  .material-card {
+    background: #f9fafb;
+    border-radius: 8px;
     padding: 12px;
-    background: var(--surface-2);
-    border-radius: var(--radius-sm);
-    border: 1px solid transparent;
-    transition: border-color 0.2s;
+    margin-bottom: 10px;
+    border: 1px solid #eef2f7;
   }
-  .material-row.has-result {
-    border-color: rgba(52,211,153,0.25);
-  }
-  .material-row .row-label {
-    font-size: 12px;
-    color: var(--text-3);
-    margin-bottom: 4px;
-  }
-  .material-row .row-result {
-    font-size: 12px;
-    color: var(--green);
-    margin-top: 4px;
-    text-align: center;
-  }
-  .material-row .del-btn {
-    width: 36px;
-    height: 36px;
+  .material-card:last-child { margin-bottom: 0; }
+  .material-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-3);
-    cursor: pointer;
-    font-size: 16px;
-    align-self: end;
-    transition: all 0.2s;
+    gap: 6px;
+    margin-bottom: 8px;
   }
-  .material-row .del-btn:hover {
-    background: rgba(239,68,68,0.15);
-    border-color: #ef4444;
-    color: #ef4444;
+  .material-header .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #eef1fb;
+    color: #4a7cf7;
   }
-  .add-btn {
-    width: 100%;
-    padding: 10px;
-    background: transparent;
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-2);
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
+  .material-header .prop-display {
+    font-size: 12px;
+    color: #4a7cf7;
+    font-weight: 600;
+    margin-left: auto;
   }
-  .add-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: var(--accent-dim);
-  }
-  .result-area {
-    margin-top: 16px;
+
+  /* 计算结果 */
+  .result-card {
+    background: linear-gradient(135deg, #f0f4ff, #e8edfe);
+    border: 1px solid #d6e0fa;
+    border-radius: 12px;
     padding: 16px;
-    background: var(--surface-2);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
   }
-  .result-area.highlight {
-    border-color: var(--green);
-    background: rgba(52,211,153,0.05);
-  }
-  .result-row {
+  .result-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 8px 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid #dce4f5;
   }
-  .result-row:last-child { border-bottom: none; }
-  .result-row .label { color: var(--text-2); font-size: 13px; }
-  .result-row .value {
-    font-size: 15px;
-    font-weight: 600;
-  }
-  .result-row .value.g { color: var(--green); }
-  .result-row .value.proportion { color: var(--accent); }
-  .result-row .value .unit { font-weight: 400; font-size: 12px; color: var(--text-3); }
-  .divider { height: 1px; background: var(--border); margin: 16px 0; }
-  .yield-result {
-    background: rgba(52,211,153,0.08);
-    border-radius: var(--radius-sm);
-    padding: 16px;
-    text-align: center;
-    margin-top: 16px;
-  }
-  .yield-result .big-num {
-    font-size: 36px;
-    font-weight: 700;
-    color: var(--green);
-  }
-  .yield-result .big-num .unit {
+  .result-item:last-child { border-bottom: none; }
+  .result-item .label { font-size: 13px; color: #4a5568; }
+  .result-item .value {
     font-size: 16px;
+    font-weight: 700;
+    color: #2d3748;
+  }
+  .result-item .value .unit {
+    font-size: 12px;
     font-weight: 400;
-    color: var(--text-2);
+    color: #718096;
+    margin-left: 2px;
   }
-  .yield-result .sub {
-    color: var(--text-2);
-    font-size: 13px;
-    margin-top: 4px;
-  }
-  .icon-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: transparent;
-    border: none;
-    color: var(--text-3);
-    cursor: pointer;
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: all 0.2s;
-  }
-  .icon-btn:hover { color: var(--text-2); background: var(--surface-2); }
-  .prod-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  @media (max-width: 480px) { .prod-row { grid-template-columns: 1fr; } }
-  .tag {
-    display: inline-block;
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-weight: 500;
-  }
-  .tag-cotton { background: rgba(79,140,255,0.15); color: var(--accent); }
-  .tag-dty { background: rgba(251,146,60,0.15); color: var(--orange); }
-  .tag-spandex { background: rgba(52,211,153,0.15); color: var(--green); }
-  .chart-summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-  }
-  .chart-bar-wrapper { flex: 1; min-width: 100px; }
-  .chart-bar-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    margin-bottom: 4px;
-  }
-  .chart-bar-label .name { color: var(--text); }
-  .chart-bar-label .pct { color: var(--accent); font-weight: 600; }
-  .chart-bar-track {
-    height: 8px;
-    background: var(--surface-2);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  .chart-bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.4s ease;
-    background: var(--accent);
-  }
-  .note {
-    font-size: 12px;
-    color: var(--text-3);
-    margin-top: 12px;
-    padding: 10px 12px;
-    background: rgba(255,255,255,0.03);
-    border-radius: var(--radius-sm);
-    line-height: 1.6;
-  }
-  .note strong { color: var(--text-2); }
-  .motor-options {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-  .motor-options button {
-    flex: 1;
-    padding: 8px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-2);
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-  }
-  .motor-options button.active {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: var(--accent-dim);
-  }
-  .motor-options button:hover { border-color: var(--accent); }
+  .result-item .value.green { color: #38a169; }
+
+  /* 按钮 */
   .calc-btn {
     width: 100%;
-    padding: 12px;
-    background: var(--accent);
+    padding: 14px;
+    background: #4a7cf7;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 10px;
     color: #fff;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
-    margin-top: 16px;
+    margin: 4px 0 12px;
+    letter-spacing: 1px;
   }
-  .calc-btn:hover { background: var(--accent-hover); }
-  .two-calc { display: flex; gap: 8px; }
-  .two-calc .calc-btn { margin-top: 0; }
+  .calc-btn:hover { background: #3b6be0; }
+  .calc-btn:active { background: #2d5ac2; }
+
+  .hint {
+    font-size: 11px;
+    color: #a0aec0;
+    margin-top: 2px;
+  }
 </style>
 </head>
 <body>
-<div class="container">
+<div class="app">
 
-  <header>
-    <div class="badge">佛山张槎 · 棉针织专用</div>
-    <h1>🧶 针织面料 <span>成本产量核算器</span></h1>
-    <p>原料成分占比 + 圆机日产量 · 基于英支纱支与100针纱长标准</p>
-  </header>
-
-  <div class="grid">
-
-    <!-- ====== 第一套：成分占比 ====== -->
-    <div class="panel">
-      <div class="panel-title"><span class="num">1</span> 原料成分占比</div>
-      <div class="panel-sub">输入每种原料的纱支（或丹尼）和纱长，自动计算重量占比</div>
-
-      <div class="formula-box">
-        <strong style="color:var(--text);">核心公式</strong><br>
-        ① 单针纱长 <span class="math">L(mm) = X × 10 ÷ 100</span><br>
-        ② 单针重量 <span class="math">G = (L × 590.5) ÷ (S × 1000)</span><br>
-        ③ 某原料占比 = <span class="math">该原料G ÷ 所有原料G之和</span>
-      </div>
-
-      <div id="materialContainer"></div>
-      <button class="add-btn" onclick="addMaterial()">+ 添加原料</button>
-
-      <div id="compositionResult" class="result-area" style="display:none;">
-        <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--green);">📊 成分占比结果</div>
-        <div id="proportionChart"></div>
-        <div id="proportionDetails"></div>
-        <div class="note">
-          <strong>📌 说明</strong>：<br>
-          • 棉纱/涤棉：英支 <strong>S</strong> 直接使用<br>
-          • 低弹丝/涤纶长丝：<strong>S = 5315 ÷ D</strong><br>
-          • 氨纶：<strong>S = 5200 ÷ D</strong><br>
-          • 路数只记录，<strong>不参与比例计算</strong>
-        </div>
-      </div>
-    </div>
-
-    <!-- ====== 第二套：日产量 ====== -->
-    <div class="panel">
-      <div class="panel-title"><span class="num">2</span> 圆机日产量</div>
-      <div class="panel-sub">输入机台参数，自动计算24小时产量</div>
-
-      <div class="formula-box">
-        <strong style="color:var(--text);">核心公式</strong><br>
-        <span class="math">L<sub>转</sub> = L × Z</span> &nbsp;→&nbsp;
-        <span class="math">G<sub>转</sub> = ΣG × Z</span><br>
-        <span class="math">Q<sub>分钟</sub> = G<sub>转</sub> × n × η</span> &nbsp;→&nbsp;
-        <span class="math">Q<sub>日(kg)</sub> = Q<sub>分钟</sub> × 1.44</span>
-      </div>
-
-      <div class="prod-row">
-        <div class="field-group">
-          <div class="field-label">总针数 Z <span class="hint">针筒</span></div>
-          <input type="number" id="totalNeedles" placeholder="如 1740" min="1">
-        </div>
-        <div class="field-group">
-          <div class="field-label">转速 n <span class="hint">r/min</span></div>
-          <input type="number" id="speed" placeholder="如 25" min="0" step="0.1">
-        </div>
-        <div class="field-group">
-          <div class="field-label">效率 η <span class="hint">0.85~0.95</span></div>
-          <input type="number" id="efficiency" placeholder="如 0.88" min="0" max="1" step="0.01">
-        </div>
-      </div>
-
-      <div class="field-group">
-        <div class="field-label">常用方案 <span class="hint">一键填入</span></div>
-        <div class="motor-options">
-          <button onclick="fillPreset(1740,22,0.85)">34寸 1740针 22r</button>
-          <button onclick="fillPreset(1944,25,0.88)">38寸 1944针 25r</button>
-          <button onclick="fillPreset(2304,20,0.85)">42寸 2304针 20r</button>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-      <div style="font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:10px;">引用的原料（自动取自上方）</div>
-      <div id="yarnRefList" style="font-size:13px;color:var(--text-3);margin-bottom:12px;line-height:1.8;">
-        请先在左侧添加原料
-      </div>
-
-      <div class="two-calc">
-        <button class="calc-btn" onclick="calcComposition()">📋 计算成分</button>
-        <button class="calc-btn" onclick="calcProduction()">⚙️ 计算产量</button>
-      </div>
-
-      <div id="productionResult" class="yield-result" style="display:none;">
-        <div class="sub">24小时理论产量</div>
-        <div class="big-num"><span id="dailyYield">0</span> <span class="unit">kg</span></div>
-        <div class="sub">
-          每分钟 <span id="perMinYield">0</span> g &nbsp;·&nbsp; 每天 <span id="dailyYieldHours">0</span> 米
-        </div>
-        <div class="note" style="margin-top:12px;text-align:left;">
-          <strong>📌 说明</strong>：实际产量受停机换纱、落布等影响，建议 ×0.90~0.95 作为实际参考值。
-        </div>
-      </div>
-    </div>
-
+  <div class="header">
+    <h1>🔧 大圆机<span>产量计算器</span></h1>
   </div>
+
+  <!-- ====== 材料 1 ====== -->
+  <div class="section">
+    <div class="section-title"><span class="dot"></span> 材料 1</div>
+    <div class="material-card">
+      <div class="material-header">
+        <span class="tag">棉纱</span>
+        <span class="prop-display">占比: <span id="prop1">0.00</span>%</span>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">规格</div>
+          <input type="number" id="spec1" placeholder="如 32" min="1" step="0.1">
+        </div>
+        <div class="field-group">
+          <div class="field-label">单位</div>
+          <select id="unit1">
+            <option value="s">英支 S</option>
+            <option value="d">丹尼 D</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">纱长 (100针)</div>
+          <input type="number" id="yarnLen1" placeholder="如 28" min="0" step="0.1">
+          <div class="hint">100针 = ? cm</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">路数</div>
+          <input type="number" id="luShu1" placeholder="如 4" min="0">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 材料 2 ====== -->
+  <div class="section">
+    <div class="section-title"><span class="dot"></span> 材料 2</div>
+    <div class="material-card">
+      <div class="material-header">
+        <span class="tag">氨纶</span>
+        <span class="prop-display">占比: <span id="prop2">0.00</span>%</span>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">规格</div>
+          <input type="number" id="spec2" placeholder="如 40" min="1" step="0.1">
+        </div>
+        <div class="field-group">
+          <div class="field-label">单位</div>
+          <select id="unit2">
+            <option value="s">英支 S</option>
+            <option value="d" selected>丹尼 D</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">纱长 (100针)</div>
+          <input type="number" id="yarnLen2" placeholder="如 26" min="0" step="0.1">
+          <div class="hint">100针 = ? cm</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">路数</div>
+          <input type="number" id="luShu2" placeholder="如 1" min="0">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 其它参数 ====== -->
+  <div class="section">
+    <div class="section-title"><span class="dot"></span> 其它参数</div>
+    <div class="field-row-3">
+      <div class="field-group">
+        <div class="field-label">总针数</div>
+        <input type="number" id="totalNeedles" placeholder="如 1740" min="1">
+      </div>
+      <div class="field-group">
+        <div class="field-label">生产效率 %</div>
+        <input type="number" id="efficiency" placeholder="如 88" min="0" max="100" step="0.1">
+      </div>
+      <div class="field-group">
+        <div class="field-label">转速 转/分</div>
+        <input type="number" id="speed" placeholder="如 22" min="0" step="0.1">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <div class="field-label">每公斤单价 (元)</div>
+        <input type="number" id="unitPrice" placeholder="如 42" min="0" step="0.01">
+      </div>
+      <div class="field-group">
+        <div class="field-label">布重 (KG)</div>
+        <input type="number" id="rollWeight" value="25" min="0" step="0.1">
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 按钮 ====== -->
+  <button class="calc-btn" onclick="calcAll()">计 算</button>
+
+  <!-- ====== 结果 ====== -->
+  <div class="result-card" id="resultArea" style="display:none;">
+    <div class="result-item">
+      <span class="label">每天产量</span>
+      <span class="value green"><span id="dailyYield">0</span><span class="unit"> kg</span></span>
+    </div>
+    <div class="result-item">
+      <span class="label">每天产值</span>
+      <span class="value green"><span id="dailyValue">0</span><span class="unit"> 元</span></span>
+    </div>
+    <div class="result-item">
+      <span class="label">落布圈数</span>
+      <span class="value"><span id="doffRevol">0</span><span class="unit"> 圈</span></span>
+    </div>
+  </div>
+
 </div>
 
 <script>
-  // 原料数据
-  let materials = [];
-  let matIdCounter = 0;
+function calcAll() {
+  // ── 读取材料1 ──
+  const spec1 = parseFloat(document.getElementById('spec1').value) || 0;
+  const unit1 = document.getElementById('unit1').value;
+  const yarnLen1 = parseFloat(document.getElementById('yarnLen1').value) || 0;
+  const luShu1 = parseFloat(document.getElementById('luShu1').value) || 0;
 
-  // 默认添加两个示例
-  function init() {
-    addMaterial('棉纱', 'cotton', 32, 28, 4);
-    addMaterial('氨纶', 'spandex', 40, 26, 1);
+  // ── 读取材料2 ──
+  const spec2 = parseFloat(document.getElementById('spec2').value) || 0;
+  const unit2 = document.getElementById('unit2').value;
+  const yarnLen2 = parseFloat(document.getElementById('yarnLen2').value) || 0;
+  const luShu2 = parseFloat(document.getElementById('luShu2').value) || 0;
+
+  // ── 读取其它参数 ──
+  const Z = parseFloat(document.getElementById('totalNeedles').value) || 0;
+  const eta = (parseFloat(document.getElementById('efficiency').value) || 0) / 100;
+  const n = parseFloat(document.getElementById('speed').value) || 0;
+  const price = parseFloat(document.getElementById('unitPrice').value) || 0;
+  const rollW = parseFloat(document.getElementById('rollWeight').value) || 25;
+
+  // 校验
+  if (!spec1 || !yarnLen1 || !spec2 || !yarnLen2) {
+    alert('请完整填写两种材料的规格和纱长');
+    return;
+  }
+  if (!Z || !n || !eta) {
+    alert('请完整填写总针数、转速和生产效率');
+    return;
   }
 
-  // 纱支类型定义
-  const YARN_TYPES = {
-    cotton: { label: '棉纱/涤棉', tag: 'tag-cotton', convert: s => s },
-    dty: { label: '低弹丝/涤纶长丝', tag: 'tag-dty', convert: d => 5315 / d },
-    spandex: { label: '氨纶', tag: 'tag-spandex', convert: d => 5200 / d }
-  };
+  // ── 计算单针纱长 L(mm) ──
+  const L1 = yarnLen1 * 10 / 100;
+  const L2 = yarnLen2 * 10 / 100;
 
-  function tagClass(type) { return YARN_TYPES[type]?.tag || 'tag-cotton'; }
-  function typeLabel(type) { return YARN_TYPES[type]?.label || type; }
-
-  function addMaterial(name, type, val, yarnLen, luShu) {
-    const id = ++matIdCounter;
-    materials.push({
-      id,
-      name: name || '',
-      type: type || 'cotton',
-      value: val ?? '',
-      yarnLen: yarnLen ?? '',
-      luShu: luShu ?? ''
-    });
-    renderMaterials();
-    renderYarnRef();
+  // ── 纱支换算 ──
+  function toCount(val, unit, isSpandex) {
+    if (unit === 's') return val;  // 英支直接使用
+    // 丹尼 D → 英支换算
+    if (isSpandex) return 5200 / val;
+    return 5315 / val;
   }
 
-  function removeMaterial(id) {
-    if (materials.length <= 1) return;
-    materials = materials.filter(m => m.id !== id);
-    renderMaterials();
-    renderYarnRef();
-    document.getElementById('compositionResult').style.display = 'none';
-  }
+  // 假设材料2通常是氨纶，材料1是棉纱/涤棉
+  // 实际上应由用户选择。这里做简化：
+  // 棉纱类的都用5315，氨纶类的用5200
+  // 我们加一个智能判断：如果是丹尼且值>=20，认为可能是氨纶
+  const isSpandex2 = (unit2 === 'd' && spec2 >= 20);
+  
+  const S1 = toCount(spec1, unit1, false);
+  const S2 = toCount(spec2, unit2, isSpandex2);
 
-  function updateMat(id, field, val) {
-    const m = materials.find(x => x.id === id);
-    if (m) { m[field] = val; }
-  }
+  // ── 单针用纱重量 G = (L × 590.5) / (S × 1000) ──
+  const G1 = (L1 * 590.5) / (S1 * 1000);
+  const G2 = (L2 * 590.5) / (S2 * 1000);
 
-  function renderMaterials() {
-    const c = document.getElementById('materialContainer');
-    c.innerHTML = materials.map(m => {
-      const isCotton = m.type === 'cotton';
-      const valLabel = isCotton ? '英支 S' : '丹尼 D';
-      const valPlaceholder = isCotton ? '如 32' : '如 40';
-      return `
-        <div class="material-row" id="mat-row-${m.id}">
-          <div>
-            <div class="row-label">原料名称</div>
-            <input type="text" value="${m.name}" placeholder="如 32s棉纱"
-              onchange="updateMat(${m.id},'name',this.value)"
-              style="width:100%;">
-          </div>
-          <div>
-            <div class="row-label">${valLabel}</div>
-            <input type="number" value="${m.value}" placeholder="${valPlaceholder}"
-              onchange="updateMat(${m.id},'value',this.value)" min="1" step="0.1">
-          </div>
-          <div>
-            <div class="row-label">纱长 cm</div>
-            <input type="number" value="${m.yarnLen}" placeholder="100针=?"
-              onchange="updateMat(${m.id},'yarnLen',this.value)" min="0" step="0.1">
-            <div style="font-size:10px;color:var(--text-3);margin-top:2px;">100针 = ? cm</div>
-          </div>
-          <div>
-            <div class="row-label">类型</div>
-            <select onchange="updateMat(${m.id},'type',this.value);renderYarnRef();">
-              <option value="cotton" ${m.type==='cotton'?'selected':''}>棉</option>
-              <option value="dty" ${m.type==='dty'?'selected':''}>丝</option>
-              <option value="spandex" ${m.type==='spandex'?'selected':''}>氨</option>
-            </select>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
+  // ── 成分占比 ──
+  const totalG = G1 + G2;
+  const pct1 = (G1 / totalG * 100);
+  const pct2 = (G2 / totalG * 100);
+  document.getElementById('prop1').textContent = pct1.toFixed(2);
+  document.getElementById('prop2').textContent = pct2.toFixed(2);
 
-  function renderYarnRef() {
-    const el = document.getElementById('yarnRefList');
-    if (!materials.length || materials.every(m => !m.yarnLen && !m.value)) {
-      el.innerHTML = '<span style="color:var(--text-3);">请先在左侧添加原料并填入纱支和纱长</span>';
-      return;
-    }
-    el.innerHTML = materials.map(m => {
-      const gl = YARN_TYPES[m.type]?.label || m.type;
-      return `<span style="color:var(--text-2);">${m.name || '未命名'}</span> ` +
-             `<span style="color:var(--text-3);">(${gl})</span>`;
-    }).join(' &nbsp;·&nbsp; ');
-  }
+  // ── 产量计算 ──
+  // 每转总克重 = Σ(单针G × 路数)  注：一路一针
+  const G_rev = (G1 * luShu1 + G2 * luShu2) * Z;
+  // 每分钟产量(g) = 每转克重 × 转速 × 效率
+  const Q_min = G_rev * n * eta;
+  // 每天产量(kg) = 每分钟产量(g) × 60 × 24 / 1000
+  const Q_day = Q_min * 1.44;
 
-  function calcComposition() {
-    const results = materials.map(m => {
-      const yarnLen = parseFloat(m.yarnLen);
-      if (!m.value || !yarnLen) return null;
-      const v = parseFloat(m.value);
-      if (!v || !yarnLen) return null;
+  // ── 每天产值 ──
+  const val_day = Q_day * price;
 
-      // 步骤1：100针 = X cm → 单针纱长 L(mm)
-      const L = yarnLen * 10 / 100;
+  // ── 落布圈数 ──
+  // 每转重量(kg) = G_rev / 1000
+  // 落布圈数 = 布重 / 每转重量
+  const rev_kg = G_rev / 1000;
+  const doff = rollW / rev_kg;
 
-      // 纱支换算
-      const S = YARN_TYPES[m.type]?.convert(v) || v;
-      if (!S || S <= 0) return null;
-
-      // 步骤2：单针用纱重量 G = (L × 590.5) / (S × 1000)
-      const G = (L * 590.5) / (S * 1000);
-
-      return { ...m, L, S, G };
-    }).filter(r => r !== null);
-
-    if (results.length === 0) {
-      alert('请至少填入一种原料的纱支和纱长');
-      return;
-    }
-
-    const totalG = results.reduce((s, r) => s + r.G, 0);
-
-    // 渲染图表
-    const chartEl = document.getElementById('proportionChart');
-    const detailEl = document.getElementById('proportionDetails');
-    const colors = ['#4f8cff', '#fb923c', '#34d399', '#a78bfa', '#f472b6', '#fbbf24'];
-    const totalLuShu = materials.reduce((s, m) => s + (parseFloat(m.luShu) || 0), 0);
-
-    // 找到当前最低纱长的原料（即基准原料，往往是棉纱）
-    const minL = Math.min(...results.map(r => r.L));
-    const baseMat = results.find(r => r.L === minL);
-
-    chartEl.innerHTML = results.map((r, i) => {
-      const pct = (r.G / totalG * 100);
-      return `
-        <div class="chart-bar-wrapper">
-          <div class="chart-bar-label">
-            <span class="name">${r.name || typeLabel(r.type)}</span>
-            <span class="pct">${pct.toFixed(2)}%</span>
-          </div>
-          <div class="chart-bar-track">
-            <div class="chart-bar-fill" style="width:${pct}%;background:${colors[i % colors.length]};"></div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    detailEl.innerHTML = results.map((r, i) => {
-      const pct = (r.G / totalG * 100);
-      const typeInfo = YARN_TYPES[r.type];
-      return `
-        <div class="result-row">
-          <span class="label">
-            <span class="tag ${typeInfo?.tag || 'tag-cotton'}" style="margin-right:6px;">${typeInfo?.label || r.type}</span>
-            ${r.name || '未命名'}
-          </span>
-          <span class="value proportion">
-            ${pct.toFixed(2)}%
-            <span class="unit">（G=${r.G.toFixed(5)}g·单针纱长${r.L.toFixed(2)}mm·英支${r.S.toFixed(2)}）</span>
-          </span>
-        </div>
-      `;
-    }).join('');
-
-    // 额外：如果路数填了，显示路数信息
-    if (totalLuShu > 0) {
-      detailEl.innerHTML += `
-        <div class="result-row">
-          <span class="label">总路数</span>
-          <span class="value" style="color:var(--text-3);font-size:13px;">
-            ${totalLuShu} 路 <span class="unit">（仅记录，不参与比例计算）</span>
-          </span>
-        </div>
-      `;
-    }
-
-    document.getElementById('compositionResult').style.display = 'block';
-    // 滚动到结果
-    document.getElementById('compositionResult').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  function calcProduction() {
-    const Z = parseFloat(document.getElementById('totalNeedles').value);
-    const n = parseFloat(document.getElementById('speed').value);
-    const eta = parseFloat(document.getElementById('efficiency').value);
-
-    if (!Z || !n || !eta) {
-      alert('请完整填写总针数、转速和效率');
-      return;
-    }
-
-    // 获取原料的单针重量
-    const validMats = materials.map(m => {
-      const yarnLen = parseFloat(m.yarnLen);
-      const val = parseFloat(m.value);
-      if (!val || !yarnLen) return null;
-      const L = yarnLen * 10 / 100;
-      const S = YARN_TYPES[m.type]?.convert(val) || val;
-      if (!S || S <= 0) return null;
-      const G = (L * 590.5) / (S * 1000);
-      return { name: m.name || typeLabel(m.type), G, L };
-    }).filter(r => r !== null);
-
-    if (validMats.length === 0) {
-      alert('请先在左侧添加原料并填入纱支和纱长');
-      return;
-    }
-
-    // 每转总重量
-    const totalSingleG = validMats.reduce((s, r) => s + r.G, 0);
-    const G_rev = totalSingleG * Z;
-    const Q_min = G_rev * n * eta;
-    const Q_day = Q_min * 1.44; // 24*60/1000 = 1.44
-
-    document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
-    document.getElementById('perMinYield').textContent = Q_min.toFixed(1);
-    document.getElementById('dailyYieldHours').textContent = '—';
-
-    // 同时更新成分（如果没算过）
-    // 如果结果区还没出来，先算出成分
-    if (document.getElementById('compositionResult').style.display === 'none') {
-      // 只算成分但无需更新UI
-    }
-
-    document.getElementById('productionResult').style.display = 'block';
-    document.getElementById('productionResult').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  function fillPreset(z, n, eta) {
-    document.getElementById('totalNeedles').value = z;
-    document.getElementById('speed').value = n;
-    document.getElementById('efficiency').value = eta;
-  }
-
-  // 初始化
-  init();
+  // ── 显示结果 ──
+  document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
+  document.getElementById('dailyValue').textContent = val_day.toFixed(2);
+  document.getElementById('doffRevol').textContent = Math.round(doff);
+  document.getElementById('resultArea').style.display = 'block';
+  document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 </script>
-
 </body>
 </html>
