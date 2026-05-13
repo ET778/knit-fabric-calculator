@@ -262,6 +262,83 @@
     font-size: 12px;
     white-space: nowrap;
   }
+
+  /* 成本模块 */
+  .cost-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .cost-table th {
+    text-align: left;
+    padding: 6px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    border-bottom: 2px solid var(--accent-light);
+  }
+  .cost-table td {
+    padding: 4px;
+    border-bottom: 1px dashed var(--line);
+    vertical-align: middle;
+  }
+  .cost-table input {
+    width: 100%;
+    padding: 4px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+  }
+  .cost-table input:focus { border-bottom-color: var(--accent); }
+  .cost-table .cost-val {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 12px;
+    text-align: right;
+    padding-right: 6px;
+  }
+  .cost-table .auto-pct {
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+  }
+  .cost-summary {
+    margin-top: 12px;
+    border: 1px solid var(--accent-light);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .cost-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+  }
+  .cost-total-row:last-child { border-bottom: none; }
+  .cost-grand {
+    background: rgba(139,111,71,0.08);
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .cost-grand span:last-child { color: var(--accent); }
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--accent-light);
+  }
   .add-row-btn {
     padding: 6px 16px;
     margin-top: 8px;
@@ -383,7 +460,7 @@
   <div class="header">
     <div class="brand">生 华 布 行</div>
     <div class="brand-en">SHENGHUA FABRIC CO.</div>
-    <div class="title">棉针织算料单 · 原料成分占比 &amp; 圆机日产量</div>
+    <div class="title">针织核算器</div>
   </div>
 
   <!-- 左右双栏 -->
@@ -455,6 +532,51 @@
     </div>
   </div>
 
+  <!-- ====== 胚布成本计算模块 ====== -->
+  <div class="sheet cost-module" id="costModule" style="margin-top:16px;">
+    <div class="section-title">胚 布 成 本 计 算</div>
+
+    <!-- 客户信息 -->
+    <div class="field-row-2">
+      <div class="field"><label>客户名称</label><input type="text" id="customerName" placeholder="请输入" oninput="saveCostCache()"></div>
+      <div class="field"><label>跟单员</label><input type="text" id="follower" placeholder="请输入" oninput="saveCostCache()"></div>
+    </div>
+
+    <!-- 材料成本明细 -->
+    <div style="font-size:12px;font-weight:600;color:var(--accent);margin:12px 0 8px;letter-spacing:1px;">材料成本明细</div>
+    <table class="cost-table">
+      <thead>
+        <tr>
+          <th style="width:70px;">名称</th>
+          <th style="width:60px;">单位</th>
+          <th>占比%</th>
+          <th>单价(元/kg)</th>
+          <th>织损率%</th>
+          <th>材料成本(元/kg)</th>
+        </tr>
+      </thead>
+      <tbody id="costBody"></tbody>
+    </table>
+
+    <!-- 附加费用 -->
+    <div class="field-row-2" style="margin-top:12px;">
+      <div class="field"><label>织造费 <span class="hint">元/kg</span></label><input type="number" id="weavingFee" placeholder="如 3.5" step="0.01" oninput="calcCost();saveCostCache()"></div>
+      <div class="field"><label>网费/其他 <span class="hint">元/kg</span></label><input type="number" id="extraFee" placeholder="如 0.5" step="0.01" oninput="calcCost();saveCostCache()"></div>
+    </div>
+
+    <!-- 成本汇总 -->
+    <div class="cost-summary">
+      <div class="cost-total-row">
+        <span>纱线成本合计</span>
+        <span><span id="yarnTotalCost">0.00</span> 元/kg</span>
+      </div>
+      <div class="cost-total-row cost-grand">
+        <span>胚布总成本</span>
+        <span><span id="greigeTotalCost">0.00</span> 元/kg</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -479,7 +601,8 @@
     const id = ++idCounter;
     materials.push({
       id, spec: spec ?? '', unit: unit || 's',
-      yarnLen: yarnLen ?? '', luShu: luShu ?? ''
+      yarnLen: yarnLen ?? '', luShu: luShu ?? '',
+      costName: '', costUnit: '', price: '', lossRate: ''
     });
     renderMats();
     calcAll();
@@ -601,6 +724,131 @@
     }
 
     document.getElementById('resultSheet').style.display = 'block';
+    renderCostTable();
+  }
+
+  // ── 胚布成本 ──
+  function renderCostTable() {
+    const tbody = document.getElementById('costBody');
+    if (!tbody) return;
+    // 计算各材料占比
+    const weightedG = materials.reduce((s, m) => {
+      const spec = parseFloat(m.spec) || 0;
+      const yarnLen = parseFloat(m.yarnLen) || 0;
+      const luShu = parseFloat(m.luShu) || 0;
+      if (!spec || !yarnLen) return s;
+      const L = yarnLen * 10 / 100;
+      const conv = UNIT_CONV[m.unit];
+      const S = conv ? conv.convert(spec) : spec;
+      if (!S || S <= 0) return s;
+      const G = (L * 590.5) / (S * 1000);
+      return s + G * luShu;
+    }, 0);
+
+    tbody.innerHTML = materials.map((m, i) => {
+      const spec = parseFloat(m.spec) || 0;
+      const yarnLen = parseFloat(m.yarnLen) || 0;
+      const luShu = parseFloat(m.luShu) || 0;
+      let pct = 0;
+      if (weightedG > 0 && spec && yarnLen) {
+        const L = yarnLen * 10 / 100;
+        const conv = UNIT_CONV[m.unit];
+        const S = conv ? conv.convert(spec) : spec;
+        if (S > 0) {
+          const G = (L * 590.5) / (S * 1000);
+          pct = G * luShu / weightedG * 100;
+        }
+      }
+      return `
+        <tr>
+          <td><input type="text" value="${m.costName || ''}" placeholder="如 棉纱" onchange="updateCostField(${m.id},'costName',this.value)"></td>
+          <td><input type="text" value="${m.costUnit || ''}" placeholder="如 kg" style="width:80%;" onchange="updateCostField(${m.id},'costUnit',this.value)"></td>
+          <td class="auto-pct">${pct.toFixed(2)}%</td>
+          <td><input type="number" value="${m.price}" placeholder="如 32" min="0" step="0.01" onchange="updateCostField(${m.id},'price',this.value)"></td>
+          <td><input type="number" value="${m.lossRate}" placeholder="如 2" min="0" max="100" step="0.1" onchange="updateCostField(${m.id},'lossRate',this.value)"></td>
+          <td class="cost-val" id="costVal-${m.id}">—</td>
+        </tr>
+      `;
+    }).join('');
+    calcCost();
+  }
+
+  function updateCostField(id, field, val) {
+    const m = materials.find(x => x.id === id);
+    if (m) { m[field] = val; }
+    renderCostTable();
+    saveCache();
+  }
+
+  function calcCost() {
+    const weavingFee = parseFloat(document.getElementById('weavingFee').value) || 0;
+    const extraFee = parseFloat(document.getElementById('extraFee').value) || 0;
+
+    // 计算加权总值
+    const weightedG = materials.reduce((s, m) => {
+      const spec = parseFloat(m.spec) || 0;
+      const yarnLen = parseFloat(m.yarnLen) || 0;
+      const luShu = parseFloat(m.luShu) || 0;
+      if (!spec || !yarnLen) return s;
+      const L = yarnLen * 10 / 100;
+      const conv = UNIT_CONV[m.unit];
+      const S = conv ? conv.convert(spec) : spec;
+      if (!S || S <= 0) return s;
+      const G = (L * 590.5) / (S * 1000);
+      return s + G * luShu;
+    }, 0);
+
+    let totalYarnCost = 0;
+    materials.forEach(m => {
+      const spec = parseFloat(m.spec) || 0;
+      const yarnLen = parseFloat(m.yarnLen) || 0;
+      const luShu = parseFloat(m.luShu) || 0;
+      const price = parseFloat(m.price) || 0;
+      const lossRate = parseFloat(m.lossRate) || 0;
+      let pct = 0;
+      if (weightedG > 0 && spec && yarnLen) {
+        const L = yarnLen * 10 / 100;
+        const conv = UNIT_CONV[m.unit];
+        const S = conv ? conv.convert(spec) : spec;
+        if (S > 0) {
+          const G = (L * 590.5) / (S * 1000);
+          pct = G * luShu / weightedG * 100;
+        }
+      }
+      // 材料成本 = (占比/100) × 单价 × (1 + 织损率/100)
+      const cost = (pct / 100) * price * (1 + lossRate / 100);
+      const el = document.getElementById('costVal-' + m.id);
+      if (el) el.textContent = cost.toFixed(4);
+      totalYarnCost += cost;
+    });
+
+    document.getElementById('yarnTotalCost').textContent = totalYarnCost.toFixed(2);
+    const greigeTotal = totalYarnCost + weavingFee + extraFee;
+    document.getElementById('greigeTotalCost').textContent = greigeTotal.toFixed(2);
+  }
+
+  // ── 成本缓存 ──
+  function saveCostCache() {
+    const data = {
+      customerName: document.getElementById('customerName').value,
+      follower: document.getElementById('follower').value,
+      weavingFee: document.getElementById('weavingFee').value,
+      extraFee: document.getElementById('extraFee').value,
+    };
+    localStorage.setItem('slCostData', JSON.stringify(data));
+  }
+
+  function loadCostCache() {
+    try {
+      const raw = localStorage.getItem('slCostData');
+      if (raw) {
+        const data = JSON.parse(raw);
+        document.getElementById('customerName').value = data.customerName || '';
+        document.getElementById('follower').value = data.follower || '';
+        document.getElementById('weavingFee').value = data.weavingFee || '';
+        document.getElementById('extraFee').value = data.extraFee || '';
+      }
+    } catch(e) {}
   }
 
   // ── 主题 ──
@@ -637,6 +885,7 @@
           idCounter = materials.reduce((max, m) => Math.max(max, m.id), 0);
           renderMats();
           calcAll();
+          setTimeout(renderCostTable, 50);
           return true;
         }
       }
@@ -658,7 +907,12 @@
     addMaterial('40', 'd_spandex', '26', '1');
     document.getElementById('resultSheet').style.display = 'none';
     document.getElementById('propBarPanel').style.display = 'none';
+    document.getElementById('customerName').value = '';
+    document.getElementById('follower').value = '';
+    document.getElementById('weavingFee').value = '';
+    document.getElementById('extraFee').value = '';
     localStorage.removeItem('slData');
+    localStorage.removeItem('slCostData');
   }
 
   // ── 导出图片 ──
@@ -705,6 +959,8 @@
     addMaterial('32', 's', '28', '4');
     addMaterial('40', 'd_spandex', '26', '1');
   }
+  loadCostCache();
+  setTimeout(renderCostTable, 100);
 </script>
 </body>
 </html>
