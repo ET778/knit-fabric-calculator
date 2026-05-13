@@ -525,12 +525,13 @@
       return { ...m, L, S, G, luShu };
     }).filter(r => r !== null);
 
-    if (mats.length === 0) {
+    // ── 成分占比（独立于机台参数，始终计算）──
+    const showResult = mats.length > 0;
+    if (!showResult) {
       document.getElementById('resultSheet').style.display = 'none';
       return;
     }
 
-    // 占比
     const totalG = mats.reduce((s, r) => s + r.G, 0);
     const propEls = mats.map(r => {
       const pct = (r.G / totalG * 100);
@@ -553,56 +554,38 @@
       if (el) el.textContent = p.pct.toFixed(2) + '%';
     });
 
-    // 产量
+    // ── 产量（需机台参数完整才显示）──
     const Z = parseFloat(document.getElementById('totalNeedles').value) || 0;
     const n = parseFloat(document.getElementById('speed').value) || 0;
     const eta = parseFloat(document.getElementById('efficiency').value) || 0;
     const price = parseFloat(document.getElementById('unitPrice').value) || 0;
     const rollW = parseFloat(document.getElementById('rollWeight').value) || 25;
-
-    if (!Z || !n || !eta) {
-      document.getElementById('resultSheet').style.display = 'none';
-      return;
-    }
-
-    // 每转重量 = Σ(G_i × luShu_i) × Z
-    // 注意：路数每路吃一针，所以总针数Z × 路数 = 每转参与编织的总针数
-    // 但准确来说：每转一圈，每路织Z针，总共Z×路数针
-    // 每转总重量 = 单针总重 × Z (因为一圈下来每个针位织一次)
-    // 但不同路数对应不同材料，所以应该用 Σ(G_i × luShu_i) × Z 吗？
-    // 不对。在一个路数上，每转一圈，该路的所有Z针都织同样的材料。
-    // 所以：每转一圈，材料i的用纱量 = G_i × luShu_i × Z (因为该材料占了luShu_i路，每路Z针)
-    // 等等，让我重新想想。
-    // 更准确的：在圆机上，一圈下来，每一路织完所有Z针。
-    // 所以如果材料i占了luShu_i路，那么每转一圈，材料i的用纱量 = G_i × Z × luShu_i
-    // 总每转G = Σ(G_i × Z × luShu_i) = Z × Σ(G_i × luShu_i)
-    
-    // 但用户文档说：G转 = (G1+G2+G3+G4) × 总针数 × 路数
-    // 这里的"路数"是指什么？如果所有材料的路数相同且等于总路数，那等于 Z × 总路数 × ΣG_i
-    // 如果各材料路数不同，则应该分别乘各自路数再求和。
-    // 文档写的是"× 路数"，看起来是总路数。但材料可以有不同的路数。
-    // 让我按各材料各自路数来算（更准确）：
     const totalLuShu = mats.reduce((s, r) => s + r.luShu, 0);
-    if (totalLuShu === 0) {
-      document.getElementById('resultSheet').style.display = 'none';
-      return;
-    }
-    
-    // 每转总克重 = Σ(G_i × Z × luShu_i) = Z × Σ(G_i × luShu_i)
-    const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * Z;
-    // 每分钟产量(g)
-    const Q_min = G_rev * n * eta;
-    // 每天产量(kg)
-    const Q_day = Q_min * 1.44;
-    // 每天产值
-    const val_day = Q_day * price;
-    // 落布圈数
-    const rev_kg = G_rev / 1000;
-    const doff = rev_kg > 0 ? rollW / rev_kg : 0;
 
-    document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
-    document.getElementById('dailyValue').textContent = val_day.toFixed(2);
-    document.getElementById('doffRevol').textContent = Math.round(doff);
+    const canCalcProduction = Z > 0 && n > 0 && eta > 0 && totalLuShu > 0;
+
+    if (canCalcProduction) {
+      // 严格按文档公式：G转 = (G1+G2+G3+G4) × 总针数 × 总路数
+      const G_rev = totalG * Z * totalLuShu;
+      // 每分钟产量(g)
+      const Q_min = G_rev * n * eta;
+      // 每天产量(kg) = 每分钟产量(g) × 60 × 24 / 1000 = Q_min × 1.44
+      const Q_day = Q_min * 1.44;
+      // 每天产值
+      const val_day = Q_day * price;
+      // 落布圈数 = 日产量(kg) ÷ 每圈布重(kg/圈)
+      const rev_kg = G_rev / 1000;
+      const doff = rev_kg > 0 ? rollW / rev_kg : 0;
+
+      document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
+      document.getElementById('dailyValue').textContent = val_day.toFixed(2);
+      document.getElementById('doffRevol').textContent = Math.round(doff);
+    } else {
+      document.getElementById('dailyYield').textContent = '—';
+      document.getElementById('dailyValue').textContent = '—';
+      document.getElementById('doffRevol').textContent = '—';
+    }
+
     document.getElementById('resultSheet').style.display = 'block';
   }
 
