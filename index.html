@@ -154,8 +154,20 @@
   }
   .sheet-row-2 { grid-template-columns: 1fr 1fr; }
   .sheet-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  .field-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
   @media (max-width: 700px) {
-    .sheet-row, .sheet-row-2, .sheet-row-4 {
+    .sheet-row, .sheet-row-2, .sheet-row-4, .grid-2col, .field-row-2 {
       grid-template-columns: 1fr;
     }
   }
@@ -222,7 +234,11 @@
     font-family: inherit;
     outline: none;
   }
-  .mat-table input:focus { border-bottom-color: var(--accent); }
+  .mat-table select option {
+    background: #f5efe6;
+    color: #1a1a1a;
+  }
+  .mat-table select:focus { border-bottom-color: var(--accent); }
   .mat-table .del-btn {
     width: 28px; height: 28px;
     border: 1px solid #d4a0a0;
@@ -370,84 +386,72 @@
     <div class="title">棉针织算料单 · 原料成分占比 &amp; 圆机日产量</div>
   </div>
 
-  <!-- 客户信息 -->
-  <div class="sheet">
-    <div class="sheet-row-2" style="margin-bottom:0;">
-      <div class="field"><label>客户名称</label><input type="text" id="customerName" placeholder="请输入" oninput="saveCache()"></div>
-      <div class="field"><label>跟单员</label><input type="text" id="follower" placeholder="请输入" oninput="saveCache()"></div>
-    </div>
-  </div>
-
-  <!-- 材料输入 -->
-  <div class="sheet">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <span style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:1px;">原 料</span>
-      <span style="font-size:11px;color:var(--accent-light);">路数仅用于产量计算，不参与成分占比</span>
-    </div>
-    <table class="mat-table">
-      <thead>
-        <tr>
-          <th style="width:60px;">序号</th>
-          <th style="width:100px;">原料名称</th>
-          <th style="width:100px;">规格</th>
-          <th style="width:90px;">单位</th>
-          <th>纱长 (100针=X cm)</th>
-          <th style="width:70px;">路数</th>
-          <th style="width:80px;">占比 %</th>
-          <th style="width:36px;"></th>
-        </tr>
-      </thead>
-      <tbody id="matBody"></tbody>
-    </table>
-    <button class="add-row-btn" onclick="addMaterial()">+ 添加原料</button>
-  </div>
-
-  <!-- 产量参数 -->
-  <div class="sheet">
-    <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:12px;">机 台 参 数</div>
-    <div class="sheet-row-4">
-      <div class="field"><label>总针数 <span class="hint">Z</span></label><input type="number" id="totalNeedles" placeholder="如 1740" oninput="calcAll();saveCache()"></div>
-      <div class="field"><label>转速 <span class="hint">r/min</span></label><input type="number" id="speed" placeholder="如 22" step="0.1" oninput="calcAll();saveCache()"></div>
-      <div class="field"><label>效率 <span class="hint">0-1</span></label><input type="number" id="efficiency" placeholder="如 0.88" min="0" max="1" step="0.01" oninput="calcAll();saveCache()"></div>
-      <div class="field"><label>单价 <span class="hint">元/kg</span></label><input type="number" id="unitPrice" placeholder="如 42" step="0.01" oninput="calcAll();saveCache()"></div>
-    </div>
-    <div class="sheet-row-2">
-      <div class="field"><label>每圈布重 <span class="hint">kg/圈</span></label><input type="number" id="rollWeight" placeholder="如 25" step="0.1" value="25" oninput="calcAll();saveCache()"></div>
-      <div class="field"></div>
-    </div>
-  </div>
-
-  <!-- 计算结果 -->
-  <div class="sheet" id="resultSheet" style="display:none;">
-    <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:12px;">计 算 结 果</div>
-
-    <!-- 成分占比条 -->
-    <div id="propBars" style="margin-bottom:16px;"></div>
-
-    <div class="result-grid">
-      <div class="result-item">
-        <div class="label">每日产量</div>
-        <div class="value"><span id="dailyYield">0</span><span class="unit">kg</span></div>
-      </div>
-      <div class="result-item">
-        <div class="label">每天产值</div>
-        <div class="value"><span id="dailyValue">0</span><span class="unit">元</span></div>
-      </div>
-      <div class="result-item">
-        <div class="label">落布圈数</div>
-        <div class="value"><span id="doffRevol">0</span><span class="unit">圈</span></div>
+  <!-- 左右双栏 -->
+  <div class="grid-2col">
+    <!-- ====== 左栏：原料 + 成分占比 ====== -->
+    <div>
+      <div class="sheet">
+        <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:12px;">原 料</div>
+        <table class="mat-table">
+          <thead>
+            <tr>
+              <th style="width:32px;">#</th>
+              <th style="width:80px;">规格</th>
+              <th style="width:80px;">单位</th>
+              <th>纱长 (100针)</th>
+              <th style="width:55px;">路数</th>
+              <th style="width:60px;">占比</th>
+              <th style="width:32px;"></th>
+            </tr>
+          </thead>
+          <tbody id="matBody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addMaterial()">+ 添加原料</button>
       </div>
     </div>
 
-    <div class="note">
-      <strong>公式说明</strong><br>
-      ① 单针纱长 L(mm) = X × 10 ÷ 100<br>
-      ② 棉/涤：英支S直接使用；低弹丝D：S=5315÷D；氨纶D：S=5200÷D<br>
-      ③ 单针重量 G = (L × 590.5) ÷ (S × 1000)<br>
-      ④ 原料占比 = (G × 该原料路数) ÷ Σ(G × 路数) × 100%<br>
-      ⑤ 日产量(kg/天) = Σ(G × 路数) × 总针数 × 转速 × 效率 × 1.44 ÷ 1000<br>
-      ⑥ 日产值 = 日产量 × 单价<br>
-      ⑦ 落布圈数 = 日产量 ÷ 每圈布重
+    <!-- ====== 右栏：机台参数 + 结果 ====== -->
+    <div>
+      <div class="sheet">
+        <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:12px;">机 台 参 数</div>
+        <div class="field">
+          <label>总针数 <span class="hint">Z</span></label>
+          <input type="number" id="totalNeedles" placeholder="如 1740" oninput="calcAll();saveCache()">
+        </div>
+        <div class="field-row-2">
+          <div class="field"><label>转速 <span class="hint">r/min</span></label><input type="number" id="speed" placeholder="如 22" step="0.1" oninput="calcAll();saveCache()"></div>
+          <div class="field"><label>效率 <span class="hint">0-1</span></label><input type="number" id="efficiency" placeholder="如 0.88" min="0" max="1" step="0.01" oninput="calcAll();saveCache()"></div>
+        </div>
+        <div class="field-row-2">
+          <div class="field"><label>单价 <span class="hint">元/kg</span></label><input type="number" id="unitPrice" placeholder="如 42" step="0.01" oninput="calcAll();saveCache()"></div>
+          <div class="field"><label>布重 <span class="hint">kg/圈</span></label><input type="number" id="rollWeight" placeholder="如 25" step="0.1" value="25" oninput="calcAll();saveCache()"></div>
+        </div>
+      </div>
+
+      <!-- 成分占比条 -->
+      <div class="sheet" id="propBarPanel" style="display:none;padding:12px 16px;">
+        <div style="font-size:12px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:8px;">成 分 占 比</div>
+        <div id="propBars"></div>
+      </div>
+
+      <!-- 计算结果 -->
+      <div class="sheet" id="resultSheet" style="display:none;padding:12px 16px;">
+        <div style="font-size:12px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:8px;">产 量 结 果</div>
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="label">日产量</div>
+            <div class="value"><span id="dailyYield">0</span><span class="unit">kg</span></div>
+          </div>
+          <div class="result-item">
+            <div class="label">日产值</div>
+            <div class="value"><span id="dailyValue">0</span><span class="unit">元</span></div>
+          </div>
+          <div class="result-item">
+            <div class="label">落布圈</div>
+            <div class="value"><span id="doffRevol">0</span><span class="unit">圈</span></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -461,7 +465,7 @@
   // 纱支换算
   const UNIT_CONV = {
     's': { label: '英支 S', convert: v => v },
-    'd_cotton': { label: '低弹丝 D', convert: d => 5315 / d },
+    'd_cotton': { label: '丝类 D', convert: d => 5315 / d },
     'd_spandex': { label: '氨纶 D', convert: d => 5200 / d },
   };
 
@@ -471,13 +475,14 @@
     ).join('');
   }
 
-  function addMaterial(name, spec, unit, yarnLen, luShu) {
+  function addMaterial(spec, unit, yarnLen, luShu) {
     const id = ++idCounter;
     materials.push({
-      id, name: name || '', spec: spec ?? '', unit: unit || 's',
+      id, spec: spec ?? '', unit: unit || 's',
       yarnLen: yarnLen ?? '', luShu: luShu ?? ''
     });
     renderMats();
+    calcAll();
     saveCache();
   }
 
@@ -500,11 +505,10 @@
     const tbody = document.getElementById('matBody');
     tbody.innerHTML = materials.map((m, i) => `
       <tr>
-        <td style="font-weight:600;color:var(--accent);">${i + 1}</td>
-        <td><input type="text" value="${m.name}" placeholder="如 棉纱" onchange="updateMat(${m.id},'name',this.value)"></td>
+        <td style="font-weight:600;color:var(--accent);font-size:12px;">${i + 1}</td>
         <td><input type="number" value="${m.spec}" placeholder="如 32" min="1" step="0.1" onchange="updateMat(${m.id},'spec',this.value)"></td>
         <td><select onchange="updateMat(${m.id},'unit',this.value)">${unitOptions(m.unit)}</select></td>
-        <td><input type="number" value="${m.yarnLen}" placeholder="如 28" min="0" step="0.1" onchange="updateMat(${m.id},'yarnLen',this.value)" style="display:inline-block;width:calc(100% - 50px);"><span style="font-size:11px;color:var(--accent-light);margin-left:4px;">cm</span></td>
+        <td><input type="number" value="${m.yarnLen}" placeholder="如 28" min="0" step="0.1" onchange="updateMat(${m.id},'yarnLen',this.value)" style="width:calc(100% - 28px);display:inline;"><span style="font-size:10px;color:var(--accent-light);">cm</span></td>
         <td><input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="updateMat(${m.id},'luShu',this.value)"></td>
         <td class="prop-cell" id="prop-${m.id}">—</td>
         <td>${materials.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}</td>
@@ -529,6 +533,7 @@
 
     if (mats.length === 0) {
       document.getElementById('resultSheet').style.display = 'none';
+      document.getElementById('propBarPanel').style.display = 'none';
       return;
     }
 
@@ -537,14 +542,14 @@
     const weightedG = mats.reduce((s, r) => s + r.G * r.luShu, 0);
     const propEls = mats.map(r => {
       const pct = weightedG > 0 ? (r.G * r.luShu / weightedG * 100) : 0;
-      return { name: r.name || UNIT_CONV[r.unit]?.label || '', pct, id: r.id };
+      return { label: UNIT_CONV[r.unit]?.label || '', pct, id: r.id };
     });
 
     // 渲染占比条
     const colors = ['#8b6f47','#c4a97d','#a0865a','#6b5335','#d4bfa0'];
     document.getElementById('propBars').innerHTML = propEls.map((p, i) => `
       <div class="prop-bar-item">
-        <span class="pname">${p.name || '原料' + (i+1)}</span>
+        <span class="pname">${p.label || '原料' + (i+1)}</span>
         <div class="ptrack"><div class="pfill" style="width:${p.pct}%;background:${colors[i%colors.length]};"></div></div>
         <span class="ppct">${p.pct.toFixed(2)}%</span>
       </div>
@@ -555,6 +560,9 @@
       const el = document.getElementById('prop-' + p.id);
       if (el) el.textContent = p.pct.toFixed(2) + '%';
     });
+
+    // 显示成分占比面板
+    document.getElementById('propBarPanel').style.display = 'block';
 
     // ── 产量（需机台参数完整才显示）──
     const Z = parseFloat(document.getElementById('totalNeedles').value) || 0;
@@ -600,8 +608,6 @@
   // ── 缓存 ──
   function saveCache() {
     const data = {
-      customerName: document.getElementById('customerName').value,
-      follower: document.getElementById('follower').value,
       materials: materials,
       totalNeedles: document.getElementById('totalNeedles').value,
       speed: document.getElementById('speed').value,
@@ -617,8 +623,6 @@
       const raw = localStorage.getItem('slData');
       if (raw) {
         const data = JSON.parse(raw);
-        document.getElementById('customerName').value = data.customerName || '';
-        document.getElementById('follower').value = data.follower || '';
         document.getElementById('totalNeedles').value = data.totalNeedles || '';
         document.getElementById('speed').value = data.speed || '';
         document.getElementById('efficiency').value = data.efficiency || '';
@@ -641,16 +645,15 @@
     if (!confirm('确定重置所有数据？')) return;
     materials = [];
     idCounter = 0;
-    document.getElementById('customerName').value = '';
-    document.getElementById('follower').value = '';
     document.getElementById('totalNeedles').value = '';
     document.getElementById('speed').value = '';
     document.getElementById('efficiency').value = '';
     document.getElementById('unitPrice').value = '';
     document.getElementById('rollWeight').value = '25';
-    addMaterial('棉纱', '32', 's', '28', '4');
-    addMaterial('氨纶', '40', 'd_spandex', '26', '1');
+    addMaterial('32', 's', '28', '4');
+    addMaterial('40', 'd_spandex', '26', '1');
     document.getElementById('resultSheet').style.display = 'none';
+    document.getElementById('propBarPanel').style.display = 'none';
     localStorage.removeItem('slData');
   }
 
@@ -695,8 +698,8 @@
   }
 
   if (!loadCache()) {
-    addMaterial('棉纱', '32', 's', '28', '4');
-    addMaterial('氨纶', '40', 'd_spandex', '26', '1');
+    addMaterial('32', 's', '28', '4');
+    addMaterial('40', 'd_spandex', '26', '1');
   }
 </script>
 </body>
