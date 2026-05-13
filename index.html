@@ -396,9 +396,9 @@
           <thead>
             <tr>
               <th style="width:32px;">#</th>
-              <th style="width:80px;">规格</th>
-              <th style="width:80px;">单位</th>
-              <th>纱长 (100针)</th>
+              <th style="width:70px;">规格</th>
+              <th style="width:70px;">单位</th>
+              <th style="min-width:120px;">纱长 (100针)</th>
               <th style="width:55px;">路数</th>
               <th style="width:60px;">占比</th>
               <th style="width:32px;"></th>
@@ -584,8 +584,12 @@
       const Q_day = G_rev * n * eta * 1.44 / 1000;
       // 每天产值
       const val_day = Q_day * price;
-      // 落布圈数 = Q日 ÷ 每圈布重
-      const doff = Q_day / rollW;
+      // 落布转数（豆包修正公式）：
+      // 日总转数 = 转速 × 60 × 24 × 效率
+      // 每转产量(kg/转) = 日产量 ÷ 日总转数
+      // 落布转数(圈) = 布重 ÷ 每转产量 = 布重 × 日总转数 ÷ 日产量
+      const dailyRevol = n * 60 * 24 * eta;
+      const doff = dailyRevol > 0 ? rollW * dailyRevol / Q_day : 0;
 
       document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
       document.getElementById('dailyValue').textContent = val_day.toFixed(2);
