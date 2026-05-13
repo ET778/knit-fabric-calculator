@@ -868,28 +868,30 @@
     const tonsPerRoll = 1000 / rollW;
 
     let totalYarnCost = 0;
-    let totalShortFee = 0;
-    let totalLossMatFee = 0;
+    // 所有材料共享的欠重和织损率（取第一个材料的）
+    const shortW = materials.length > 0 ? (parseFloat(materials[0].shortWeight) || 0) : 0;
+    const lossRate = materials.length > 0 ? (parseFloat(materials[0].lossRate) || 0) : 0;
+
     materials.forEach(m => {
       const price = parseFloat(m.price) || 0;
       const pct = parseFloat(m.costPct) || 0;
-      const lossRate = parseFloat(m.lossRate) || 0;
-      const shortW = parseFloat(m.shortWeight) || 0;
       // 材料成本 = (占比/100) × 单价
       const cost = (pct / 100) * price;
-      // 欠重费 = 吨件数 × 欠重kg/件 × 单价(元/kg)
-      const shortFee = shortW > 0 ? tonsPerRoll * shortW * (price / 1000) : 0;
-      // 织损材料费 = 单价 × (占比/100) × (织损率/100)
-      const lossMatFee = price * (pct / 100) * (lossRate / 100);
       const el = document.getElementById('costVal-' + m.id);
       if (el) el.textContent = cost.toFixed(2);
       totalYarnCost += cost;
-      totalShortFee += shortFee;
-      totalLossMatFee += lossMatFee;
     });
 
+    // 欠重费（用加权平均单价）
+    // 每吨欠重总重量 = 件数/吨 × 欠重kg/件
+    // 加权平均单价(元/kg) = 总纱线成本(元/吨) ÷ 1000
+    // 欠重费 = 每吨欠重总重量 × 加权平均单价
+    const shortFee = shortW > 0 ? tonsPerRoll * shortW * (totalYarnCost / 1000) : 0;
+    // 织损费 = 总纱线成本 × 织损率/100
+    const lossMatFee = totalYarnCost * (lossRate / 100);
+    const totalLossFee = shortFee + lossMatFee;
+
     document.getElementById('yarnTotalCost').textContent = totalYarnCost.toFixed(2);
-    const totalLossFee = totalShortFee + totalLossMatFee;
     document.getElementById('lossFeeDisplay').textContent = totalLossFee.toFixed(2);
     const greigeTotal = totalYarnCost + weavingFee + totalLossFee + extraFee;
     document.getElementById('greigeTotalCost').textContent = greigeTotal.toFixed(2);
