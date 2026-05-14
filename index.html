@@ -362,20 +362,67 @@ function renderMats() {
 }
 
 // ── 成分占比 + 产量 ──
-// 手机卡片的防抖保存函数：oninput 只存数据，onblur 时触发重渲染
+// 手机卡片的防抖保存函数：oninput 只存数据，onblur 时更新计算结果（不替换 DOM！）
 function materialBlur(id, field, val, doRender) {
   const m = materials.find(x => x.id === id);
   if (!m) return;
   m[field] = val;
   saveAll();
-  if (doRender) renderAll();
+  if (doRender) updateCalcOnly();
 }
 function costCardInput(id, field, val, doRender) {
   const m = materials.find(x => x.id === id);
   if (!m) return;
   m[field] = val;
   saveAll();
-  if (doRender) renderAll();
+  if (doRender) updateCalcOnly();
+}
+
+// 轻量更新：只刷新计算结果文字，不替换任何输入框（手机端关键！）
+function updateCalcOnly() {
+  // 成分占比
+  const mats = materials.map(m => {
+    const spec = parseFloat(m.spec) || 0, yarnLen = parseFloat(m.yarnLen) || 0, luShu = parseFloat(m.luShu) || 0;
+    if (!spec || !yarnLen) return null;
+    const L = yarnLen * 10 / 100;
+    const conv = UNIT_CONV[m.unit];
+    const S = conv ? conv.convert(spec) : spec;
+    if (!S || S <= 0) return null;
+    const G = (L * 590.5) / (S * 1000);
+    return { id: m.id, G, luShu };
+  }).filter(r => r !== null);
+
+  if (mats.length > 0) {
+    const weightedG = mats.reduce((s, r) => s + r.G * r.luShu, 0);
+    mats.forEach(r => {
+      const pct = weightedG > 0 ? (r.G * r.luShu / weightedG * 100) : 0;
+      const el = document.getElementById('prop-' + r.id);
+      if (el) el.textContent = pct.toFixed(2) + '%';
+      const ce = document.getElementById('propCard-' + r.id);
+      if (ce) ce.textContent = pct.toFixed(2) + '%';
+    });
+
+    // 产量
+    const Z = parseFloat(document.getElementById('totalNeedles').value) || 0;
+    const n = parseFloat(document.getElementById('speed').value) || 0;
+    const eta = parseFloat(document.getElementById('efficiency').value) || 0;
+    const price = parseFloat(document.getElementById('unitPrice').value) || 0;
+    const rollW = parseFloat(document.getElementById('rollWeight').value) || 25;
+    const totalLuShu = mats.reduce((s, r) => s + r.luShu, 0);
+    if (Z > 0 && n > 0 && eta > 0 && totalLuShu > 0) {
+      const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * Z;
+      const Q_day = G_rev * n * eta * 1.44 / 1000;
+      const val_day = Q_day * price;
+      const dailyRevol = n * 60 * 24 * eta;
+      const doff = dailyRevol > 0 ? rollW * dailyRevol / Q_day : 0;
+      document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
+      document.getElementById('dailyValue').textContent = val_day.toFixed(2);
+      document.getElementById('doffRevol').textContent = doff.toFixed(1);
+    }
+  }
+
+  // 成本
+  calcCost();
 }
 function calcAll() {
   const mats = materials.map(m => {
