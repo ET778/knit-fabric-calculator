@@ -108,7 +108,7 @@
   .section-title { font-size: 14px; font-weight: 600; color: var(--accent); letter-spacing: 2px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--accent-light); }
   .cost-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 6px; }
   .cost-table th { text-align: left; padding: 5px 4px; font-size: 11px; font-weight: 600; color: var(--accent); border-bottom: 2px solid var(--accent-light); }
-  .cost-table td { padding: 3px 4px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
+  .cost-table td { padding: 8px 4px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
   .cost-table input, .cost-table select { width: 100%; padding: 4px; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 13px; font-family: inherit; outline: none; }
   .cost-table input:focus, .cost-table select:focus { border-bottom-color: var(--accent); }
   .cost-table select option { background: #f5ebd0; color: #1a1a1a; }
@@ -177,7 +177,7 @@
     cursor: pointer; font-size: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
   .card-del:hover { background: #d4a0a0; color: #fff; }
-  .mat-card-row, .cost-card-row { display: flex; flex-wrap: wrap; gap: 5px 8px; margin-bottom: 3px; }
+  .mat-card-row, .cost-card-row { display: flex; flex-wrap: wrap; gap: 5px 8px; margin-bottom: 6px; }
   .mat-card-row:last-child, .cost-card-row:last-child { margin-bottom: 0; }
   .mc-field { display: flex; align-items: center; gap: 4px; }
   .mc-field .lbl { font-size: 11px; color: var(--accent-light); white-space: nowrap; }
@@ -541,6 +541,7 @@ function calcCost() {
   const rollW = parseFloat(document.getElementById('rollWeight').value) || 25;
   const tonsPerRoll = 1000 / rollW;
   let totalYarnCost = 0;
+  let totalLossFee = 0;
 
   costItems.forEach(c => {
     const price = parseFloat(c.price) || 0;
@@ -551,13 +552,13 @@ function calcCost() {
     const ce = document.getElementById('costValCard-' + c.id);
     if (ce) ce.textContent = cost.toFixed(2);
     totalYarnCost += cost;
-  });
 
-  const shortW = costItems.length > 0 ? (parseFloat(costItems[0].shortWeight) || 0) : 0;
-  const lossRate = costItems.length > 0 ? (parseFloat(costItems[0].lossRate) || 0) : 0;
-  const shortFee = shortW > 0 ? tonsPerRoll * shortW * (totalYarnCost / 1000) : 0;
-  const lossMatFee = totalYarnCost * (lossRate / 100);
-  const totalLossFee = shortFee + lossMatFee;
+    // 每行各自的欠重费 + 织损材料费
+    const sw = parseFloat(c.shortWeight) || 0;
+    const lr = parseFloat(c.lossRate) || 0;
+    if (sw > 0) totalLossFee += tonsPerRoll * sw * (cost / 1000);
+    if (lr > 0) totalLossFee += cost * (lr / 100);
+  });
 
   document.getElementById('yarnTotalCost').textContent = totalYarnCost.toFixed(2);
   document.getElementById('lossFeeDisplay').textContent = totalLossFee.toFixed(2);
