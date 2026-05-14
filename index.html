@@ -365,11 +365,12 @@ function renderMats() {
 // ── 成分占比 + 产量 ──
 // 手机卡片的统一 onchange 处理：只存数据+刷新计算结果，不替换任何 DOM
 function cardValueChanged(id, field, val) {
+  // 先看 costItems
+  const cm = costItems.find(x => x.id === id);
+  if (cm) { cm[field] = val; saveCostCache(); updateCostOnly(); return; }
+  // 再看 materials
   const m = materials.find(x => x.id === id);
-  if (!m) return;
-  m[field] = val;
-  saveAll();
-  updateCalcOnly();
+  if (m) { m[field] = val; saveAll(); updateCalcOnly(); return; }
 }
 
 // 轻量更新：只刷新计算结果文字，不替换任何输入框（手机端关键！）
@@ -488,6 +489,7 @@ function removeCostMaterial(id) {
   renderCostTable();
   saveCostCache();
 }
+
 function updateCostField(id, field, val) {
   const m = costItems.find(x => x.id === id);
   if (m) { m[field] = val; }
@@ -569,7 +571,8 @@ function calcCost() {
 // ── 缓存 ──
 function saveAll() {
   const data = {
-    materials, totalNeedles: document.getElementById('totalNeedles').value,
+    materials, costItems,
+    totalNeedles: document.getElementById('totalNeedles').value,
     speed: document.getElementById('speed').value, efficiency: document.getElementById('efficiency').value,
     unitPrice: document.getElementById('unitPrice').value, rollWeight: document.getElementById('rollWeight').value,
   };
@@ -579,6 +582,7 @@ function saveCostCache() {
   localStorage.setItem('slCostData', JSON.stringify({
     customerName: document.getElementById('customerName').value, follower: document.getElementById('follower').value,
     weavingFee: document.getElementById('weavingFee').value, extraFee: document.getElementById('extraFee').value,
+    costItems
   }));
 }
 function loadAll() {
@@ -594,12 +598,20 @@ function loadAll() {
       if (d.materials && d.materials.length) {
         materials = d.materials;
         idCounter = materials.reduce((max, m) => Math.max(max, m.id), 0);
+        if (d.costItems && d.costItems.length) {
+          costItems = d.costItems;
+          costId = costItems.reduce((max, c) => Math.max(max, c.id), 0);
+        }
         renderAll();
+        renderCostTable();
         return true;
       }
     }
   } catch(e) {}
   return false;
+}
+function updateCostOnly() {
+  renderCostTable();
 }
 function loadCostCache() {
   try {
