@@ -671,6 +671,15 @@ function _capture(el, name) {
   clone.style.left = '-9999px';
   clone.style.top = '0';
   clone.style.zIndex = '-1';
+  // 强制浅色主题色值，不受 dark mode 影响
+  clone.style.setProperty('--paper', '#f5ebd0');
+  clone.style.setProperty('--ink', '#2c2c2c');
+  clone.style.setProperty('--line', '#d4cec0');
+  clone.style.setProperty('--accent', '#8b6f47');
+  clone.style.setProperty('--accent-light', '#c4a97d');
+  clone.style.setProperty('--card', 'rgba(255,255,255,0.7)');
+  clone.style.background = '#f5ebd0';
+  clone.style.color = '#2c2c2c';
   document.body.appendChild(clone);
 
   // 替换输入框（先 append 才能 getComputedStyle）
@@ -685,6 +694,7 @@ function _capture(el, name) {
     span.style.border = 'none';
     span.style.outline = 'none';
     span.style.background = 'transparent';
+    span.style.color = '#2c2c2c';
     inp.parentNode.replaceChild(span, inp);
   });
   // 替换下拉框
@@ -699,10 +709,11 @@ function _capture(el, name) {
     span.style.border = 'none';
     span.style.outline = 'none';
     span.style.background = 'transparent';
+    span.style.color = '#2c2c2c';
     sel.parentNode.replaceChild(span, sel);
   });
 
-  html2canvas(clone, { background: getComputedStyle(document.body).getPropertyValue('--paper'), scale: 2, useCORS: true })
+  html2canvas(clone, { background: '#f5ebd0', scale: 2, useCORS: true })
     .then(c => {
       document.body.removeChild(clone);
       const a = document.createElement('a'); a.download = name; a.href = c.toDataURL('image/png'); a.click();
