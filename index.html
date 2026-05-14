@@ -664,8 +664,49 @@ function exportCostImage() {
   } else { _capture(document.getElementById('costModule'), '生华布行_胚布成本.png'); }
 }
 function _capture(el, name) {
-  html2canvas(el, { background: getComputedStyle(document.body).getPropertyValue('--paper'), scale: 2, useCORS: true })
-    .then(c => { const a = document.createElement('a'); a.download = name; a.href = c.toDataURL('image/png'); a.click(); });
+  // html2canvas 对原生 <input> 渲染会裁切文字底部
+  // 方案：克隆节点并挂到 body 获取样式，把 input/select 全换成 span
+  const clone = el.cloneNode(true);
+  clone.style.position = 'fixed';
+  clone.style.left = '-9999px';
+  clone.style.top = '0';
+  clone.style.zIndex = '-1';
+  document.body.appendChild(clone);
+
+  // 替换输入框（先 append 才能 getComputedStyle）
+  clone.querySelectorAll('input').forEach(inp => {
+    const span = document.createElement('span');
+    span.textContent = inp.value || inp.placeholder || '';
+    span.style.cssText = getComputedStyle(inp).cssText;
+    span.style.display = 'inline-block';
+    span.style.minHeight = '30px';
+    span.style.lineHeight = '30px';
+    span.style.padding = '2px 4px';
+    span.style.border = 'none';
+    span.style.outline = 'none';
+    span.style.background = 'transparent';
+    inp.parentNode.replaceChild(span, inp);
+  });
+  // 替换下拉框
+  clone.querySelectorAll('select').forEach(sel => {
+    const span = document.createElement('span');
+    span.textContent = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
+    span.style.cssText = getComputedStyle(sel).cssText;
+    span.style.display = 'inline-block';
+    span.style.minHeight = '30px';
+    span.style.lineHeight = '30px';
+    span.style.padding = '2px 4px';
+    span.style.border = 'none';
+    span.style.outline = 'none';
+    span.style.background = 'transparent';
+    sel.parentNode.replaceChild(span, sel);
+  });
+
+  html2canvas(clone, { background: getComputedStyle(document.body).getPropertyValue('--paper'), scale: 2, useCORS: true })
+    .then(c => {
+      document.body.removeChild(clone);
+      const a = document.createElement('a'); a.download = name; a.href = c.toDataURL('image/png'); a.click();
+    });
 }
 
 // ── 启动 ──
