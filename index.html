@@ -351,31 +351,24 @@ function renderMats() {
         ${raw.length > 1 ? `<button class="card-del" onclick="removeMaterial(${m.id})">×</button>` : ''}
       </div>
       <div class="mat-card-row">
-        <div class="mc-field"><span class="lbl">规格</span><input type="number" value="${m.spec}" placeholder="32" min="1" step="0.1" oninput="materialBlur(${m.id},'spec',this.value,false)" onblur="materialBlur(${m.id},'spec',this.value,true)"></div>
-        <div class="mc-field"><span class="lbl">单位</span><select onchange="materialBlur(${m.id},'unit',this.value,true)">${uOpt(m.unit)}</select></div>
+        <div class="mc-field"><span class="lbl">规格</span><input type="number" value="${m.spec}" placeholder="32" min="1" step="0.1" onchange="cardValueChanged(${m.id},'spec',this.value)"></div>
+        <div class="mc-field"><span class="lbl">单位</span><select onchange="cardValueChanged(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></div>
       </div>
       <div class="mat-card-row">
-        <div class="mc-field"><span class="lbl">纱长</span><input type="number" value="${m.yarnLen}" placeholder="28" min="0" step="0.1" oninput="materialBlur(${m.id},'yarnLen',this.value,false)" onblur="materialBlur(${m.id},'yarnLen',this.value,true)" style="max-width:65px;"><span class="tiny">cm/100针</span></div>
-        <div class="mc-field"><span class="lbl">路数</span><input type="number" value="${m.luShu}" placeholder="0" min="0" oninput="materialBlur(${m.id},'luShu',this.value,false)" onblur="materialBlur(${m.id},'luShu',this.value,true)" style="max-width:50px;"></div>
+        <div class="mc-field"><span class="lbl">纱长</span><input type="number" value="${m.yarnLen}" placeholder="28" min="0" step="0.1" onchange="cardValueChanged(${m.id},'yarnLen',this.value)" style="max-width:65px;"><span class="tiny">cm/100针</span></div>
+        <div class="mc-field"><span class="lbl">路数</span><input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="cardValueChanged(${m.id},'luShu',this.value)" style="max-width:50px;"></div>
       </div>
     </div>`).join('');
 }
 
 // ── 成分占比 + 产量 ──
-// 手机卡片的防抖保存函数：oninput 只存数据，onblur 时更新计算结果（不替换 DOM！）
-function materialBlur(id, field, val, doRender) {
+// 手机卡片的统一 onchange 处理：只存数据+刷新计算结果，不替换任何 DOM
+function cardValueChanged(id, field, val) {
   const m = materials.find(x => x.id === id);
   if (!m) return;
   m[field] = val;
   saveAll();
-  if (doRender) updateCalcOnly();
-}
-function costCardInput(id, field, val, doRender) {
-  const m = materials.find(x => x.id === id);
-  if (!m) return;
-  m[field] = val;
-  saveAll();
-  if (doRender) updateCalcOnly();
+  updateCalcOnly();
 }
 
 // 轻量更新：只刷新计算结果文字，不替换任何输入框（手机端关键！）
@@ -523,16 +516,16 @@ function renderCostTable() {
         ${materials.length > 1 ? `<button class="card-del" onclick="removeCostMaterial(${m.id})">×</button>` : ''}
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">材料</span><input type="text" value="${m.costName || ''}" placeholder="如 棉纱" oninput="costCardInput(${m.id},'costName',this.value)" onblur="costCardInput(${m.id},'costName',this.value,true)" style="min-width:80px;"></div>
-        <div class="mc-field"><span class="lbl">单位</span><select onchange="updateCostField(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></div>
+        <div class="mc-field"><span class="lbl">材料</span><input type="text" value="${m.costName || ''}" placeholder="如 棉纱" onchange="cardValueChanged(${m.id},'costName',this.value)" style="min-width:80px;"></div>
+        <div class="mc-field"><span class="lbl">单位</span><select onchange="cardValueChanged(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></div>
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">单价</span><input type="number" value="${m.price}" placeholder="32000" min="0" step="100" oninput="costCardInput(${m.id},'price',this.value)" onblur="costCardInput(${m.id},'price',this.value,true)" style="max-width:80px;"></div>
-        <div class="mc-field"><span class="lbl">占比</span><input type="number" value="${m.costPct}" placeholder="100" min="0" max="100" step="0.01" oninput="costCardInput(${m.id},'costPct',this.value)" onblur="costCardInput(${m.id},'costPct',this.value,true)" style="max-width:55px;"><span class="tiny">%</span></div>
+        <div class="mc-field"><span class="lbl">单价</span><input type="number" value="${m.price}" placeholder="32000" min="0" step="100" onchange="cardValueChanged(${m.id},'price',this.value)" style="max-width:80px;"></div>
+        <div class="mc-field"><span class="lbl">占比</span><input type="number" value="${m.costPct}" placeholder="100" min="0" max="100" step="0.01" onchange="cardValueChanged(${m.id},'costPct',this.value)" style="max-width:55px;"><span class="tiny">%</span></div>
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">欠重</span><input type="number" value="${m.shortWeight}" placeholder="0.5" min="0" step="0.01" oninput="costCardInput(${m.id},'shortWeight',this.value)" onblur="costCardInput(${m.id},'shortWeight',this.value,true)" style="max-width:55px;"></div>
-        <div class="mc-field"><span class="lbl">织损率</span><input type="number" value="${m.lossRate}" placeholder="1" min="0" max="100" step="0.1" oninput="costCardInput(${m.id},'lossRate',this.value)" onblur="costCardInput(${m.id},'lossRate',this.value,true)" style="max-width:55px;"><span class="tiny">%</span></div>
+        <div class="mc-field"><span class="lbl">欠重</span><input type="number" value="${m.shortWeight}" placeholder="0.5" min="0" step="0.01" onchange="cardValueChanged(${m.id},'shortWeight',this.value)" style="max-width:55px;"></div>
+        <div class="mc-field"><span class="lbl">织损率</span><input type="number" value="${m.lossRate}" placeholder="1" min="0" max="100" step="0.1" onchange="cardValueChanged(${m.id},'lossRate',this.value)" style="max-width:55px;"><span class="tiny">%</span></div>
       </div>
     </div>`).join('');
   calcCost();
@@ -663,7 +656,7 @@ if (localStorage.getItem('slTheme') === 'dark') document.body.classList.add('dar
 if (!loadAll()) { addMaterial('32', 's', '28', '4'); addMaterial('40', 'd_spandex', '26', '1'); }
 loadCostCache();
 let resizeTimer;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderAll, 300); });
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(updateCalcOnly, 300); });
 </script>
 </body>
 </html>
