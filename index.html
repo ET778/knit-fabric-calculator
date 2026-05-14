@@ -741,7 +741,7 @@
         </div>
 
         <!-- 产量结果（合并到同一个框） -->
-        <div id="resultSheet" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--accent-light);">
+        <div id="resultSheet" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--accent-light);">
           <div style="font-size:12px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:8px;">产 量 结 果</div>
           <div class="result-grid">
             <div class="result-item">
@@ -881,8 +881,12 @@
     const cardContainer = document.getElementById('matCardContainer');
     if (!tbody || !cardContainer) return;
 
+    // 只显示有规格和纱长的原料（参与成分计算的），成本专用材料不显示在上面
+    const rawMats = materials.filter(m => m.spec && m.yarnLen);
+    const rawOnly = materials.length !== rawMats.length;
+
     // Always render table (hidden on mobile via CSS)
-    tbody.innerHTML = materials.map((m, i) => `
+    tbody.innerHTML = rawMats.map((m, i) => `
       <tr>
         <td style="font-weight:600;color:var(--accent);font-size:12px;">${i + 1}</td>
         <td><input type="number" value="${m.spec}" placeholder="如 32" min="1" step="0.1" onchange="updateMat(${m.id},'spec',this.value)"></td>
@@ -890,18 +894,18 @@
         <td><input type="number" value="${m.yarnLen}" placeholder="如 28" min="0" step="0.1" onchange="updateMat(${m.id},'yarnLen',this.value)" style="width:calc(100% - 28px);display:inline;"><span style="font-size:10px;color:var(--accent-light);">cm</span></td>
         <td><input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="updateMat(${m.id},'luShu',this.value)"></td>
         <td class="prop-cell" id="prop-${m.id}">—</td>
-        <td>${materials.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}</td>
+        <td>${rawMats.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}</td>
       </tr>
     `).join('');
 
     // Render cards (hidden on desktop via CSS)
-    cardContainer.innerHTML = materials.map((m, i) => {
+    cardContainer.innerHTML = rawMats.map((m, i) => {
       return `
       <div class="mat-card">
         <div class="mat-card-header">
           <span class="num">#${i + 1}</span>
-          <span class="mid-pct" id="propCard-${m.id}">—</span>
-          ${materials.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}
+          <span class="mid-pct">成分占比 <span id="propCard-${m.id}">—</span></span>
+          ${rawMats.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}
         </div>
         <div class="mat-card-row">
           <div class="mat-card-field">
@@ -947,6 +951,9 @@
       document.getElementById('resultSheet').style.display = 'none';
       return;
     }
+
+    // ── 始终显示产量结果区 ──
+    document.getElementById('resultSheet').style.display = 'block';
 
     // ── 成分占比（考虑路数）──
     // 每种原料的实际用纱量 = G_i × luShu_i（路数越多，占比越大）
@@ -1010,7 +1017,6 @@
       document.getElementById('doffRevol').textContent = '—';
     }
 
-    document.getElementById('resultSheet').style.display = 'block';
     renderCostTable();
   }
 
