@@ -325,14 +325,10 @@ function renderMats() {
   const tb = document.getElementById('matBody');
   const cc = document.getElementById('matCardContainer');
   if (!tb || !cc) return;
-  const raw = materials.filter(m => {
-    const s = parseFloat(m.spec) || 0;
-    const y = parseFloat(m.yarnLen) || 0;
-    return s > 0 && y > 0;
-  });
+  const all = materials;
 
-  // PC 表格
-  tb.innerHTML = raw.map((m, i) => `
+  // PC 表格 — 渲染全部，不过滤
+  tb.innerHTML = all.map((m, i) => `
     <tr>
       <td style="font-weight:600;color:var(--accent);font-size:12px;">${i + 1}</td>
       <td><input type="number" value="${m.spec}" placeholder="如 32" min="1" step="0.1" onchange="updateMat(${m.id},'spec',this.value)"></td>
@@ -340,16 +336,16 @@ function renderMats() {
       <td><input type="number" value="${m.yarnLen}" placeholder="如 28" min="0" step="0.1" onchange="updateMat(${m.id},'yarnLen',this.value)" style="width:calc(100% - 28px);display:inline;"><span style="font-size:10px;color:var(--accent-light);">cm</span></td>
       <td><input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="updateMat(${m.id},'luShu',this.value)"></td>
       <td class="prop-cell" id="prop-${m.id}">—</td>
-      <td>${raw.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}</td>
+      <td>${all.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}</td>
     </tr>`).join('');
 
-  // 手机卡片（onblur 保存+重渲染，避免打字时频繁替换 DOM 导致键盘退出）
-  cc.innerHTML = raw.map((m, i) => `
+  // 手机卡片 — 渲染全部，不过滤
+  cc.innerHTML = all.map((m, i) => `
     <div class="mat-card">
       <div class="mat-card-header">
         <span class="num">#${i + 1}</span>
         <span class="mid-pct">占比 <span id="propCard-${m.id}">—</span></span>
-        ${raw.length > 1 ? `<button class="card-del" onclick="removeMaterial(${m.id})">×</button>` : ''}
+        ${all.length > 1 ? `<button class="card-del" onclick="removeMaterial(${m.id})">×</button>` : ''}
       </div>
       <div class="mat-card-row">
         <div class="mc-field"><span class="lbl">规格</span><input type="number" value="${m.spec}" placeholder="32" min="1" step="0.1" onchange="cardValueChanged(${m.id},'spec',this.value)"></div>
