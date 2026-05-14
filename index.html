@@ -630,6 +630,7 @@ function loadCostCache() {
 function resetForm() {
   if (!confirm('确定重置？')) return;
   materials = []; idCounter = 0;
+  costItems = []; costId = 0;
   document.getElementById('totalNeedles').value = '';
   document.getElementById('speed').value = '';
   document.getElementById('efficiency').value = '';
@@ -641,6 +642,7 @@ function resetForm() {
   document.getElementById('extraFee').value = '';
   addMaterial('32', 's', '28', '4');
   addMaterial('40', 'd_spandex', '26', '1');
+  addCostMaterial(); addCostMaterial();
   localStorage.removeItem('slData');
   localStorage.removeItem('slCostData');
 }
@@ -671,7 +673,7 @@ function _capture(el, name) {
 
 // ── 启动 ──
 if (localStorage.getItem('slTheme') === 'dark') document.body.classList.add('dark');
-if (!loadAll()) { addMaterial('32', 's', '28', '4'); addMaterial('40', 'd_spandex', '26', '1'); }
+if (!loadAll()) { addMaterial('32', 's', '28', '4'); addMaterial('40', 'd_spandex', '26', '1'); addCostMaterial(); addCostMaterial(); }
 loadCostCache();
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(updateCalcOnly, 300); });
