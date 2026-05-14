@@ -342,7 +342,7 @@ function renderMats() {
       <td>${raw.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}</td>
     </tr>`).join('');
 
-  // 手机卡片
+  // 手机卡片（onblur 保存+重渲染，避免打字时频繁替换 DOM 导致键盘退出）
   cc.innerHTML = raw.map((m, i) => `
     <div class="mat-card">
       <div class="mat-card-header">
@@ -351,17 +351,32 @@ function renderMats() {
         ${raw.length > 1 ? `<button class="card-del" onclick="removeMaterial(${m.id})">×</button>` : ''}
       </div>
       <div class="mat-card-row">
-        <div class="mc-field"><span class="lbl">规格</span><input type="number" value="${m.spec}" placeholder="32" min="1" step="0.1" onchange="updateMat(${m.id},'spec',this.value)"></div>
-        <div class="mc-field"><span class="lbl">单位</span><select onchange="updateMat(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></div>
+        <div class="mc-field"><span class="lbl">规格</span><input type="number" value="${m.spec}" placeholder="32" min="1" step="0.1" oninput="materialBlur(${m.id},'spec',this.value,false)" onblur="materialBlur(${m.id},'spec',this.value,true)"></div>
+        <div class="mc-field"><span class="lbl">单位</span><select onchange="materialBlur(${m.id},'unit',this.value,true)">${uOpt(m.unit)}</select></div>
       </div>
       <div class="mat-card-row">
-        <div class="mc-field"><span class="lbl">纱长</span><input type="number" value="${m.yarnLen}" placeholder="28" min="0" step="0.1" onchange="updateMat(${m.id},'yarnLen',this.value)" style="max-width:65px;"><span class="tiny">cm/100针</span></div>
-        <div class="mc-field"><span class="lbl">路数</span><input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="updateMat(${m.id},'luShu',this.value)" style="max-width:50px;"></div>
+        <div class="mc-field"><span class="lbl">纱长</span><input type="number" value="${m.yarnLen}" placeholder="28" min="0" step="0.1" oninput="materialBlur(${m.id},'yarnLen',this.value,false)" onblur="materialBlur(${m.id},'yarnLen',this.value,true)" style="max-width:65px;"><span class="tiny">cm/100针</span></div>
+        <div class="mc-field"><span class="lbl">路数</span><input type="number" value="${m.luShu}" placeholder="0" min="0" oninput="materialBlur(${m.id},'luShu',this.value,false)" onblur="materialBlur(${m.id},'luShu',this.value,true)" style="max-width:50px;"></div>
       </div>
     </div>`).join('');
 }
 
 // ── 成分占比 + 产量 ──
+// 手机卡片的防抖保存函数：oninput 只存数据，onblur 时触发重渲染
+function materialBlur(id, field, val, doRender) {
+  const m = materials.find(x => x.id === id);
+  if (!m) return;
+  m[field] = val;
+  saveAll();
+  if (doRender) renderAll();
+}
+function costCardInput(id, field, val, doRender) {
+  const m = materials.find(x => x.id === id);
+  if (!m) return;
+  m[field] = val;
+  saveAll();
+  if (doRender) renderAll();
+}
 function calcAll() {
   const mats = materials.map(m => {
     const spec = parseFloat(m.spec) || 0, yarnLen = parseFloat(m.yarnLen) || 0, luShu = parseFloat(m.luShu) || 0;
@@ -452,7 +467,7 @@ function renderCostTable() {
       <td>${materials.length > 1 ? `<button class="del-btn" onclick="removeCostMaterial(${m.id})">×</button>` : ''}</td>
     </tr>`).join('');
 
-  // 手机卡片
+  // 手机卡片（onblur 保存+重渲染）
   cc.innerHTML = materials.map((m, i) => `
     <div class="cost-card">
       <div class="cost-card-header">
@@ -461,16 +476,16 @@ function renderCostTable() {
         ${materials.length > 1 ? `<button class="card-del" onclick="removeCostMaterial(${m.id})">×</button>` : ''}
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">材料</span><input type="text" value="${m.costName || ''}" placeholder="如 棉纱" onchange="updateCostField(${m.id},'costName',this.value)" style="min-width:80px;"></div>
+        <div class="mc-field"><span class="lbl">材料</span><input type="text" value="${m.costName || ''}" placeholder="如 棉纱" oninput="costCardInput(${m.id},'costName',this.value)" onblur="costCardInput(${m.id},'costName',this.value,true)" style="min-width:80px;"></div>
         <div class="mc-field"><span class="lbl">单位</span><select onchange="updateCostField(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></div>
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">单价</span><input type="number" value="${m.price}" placeholder="32000" min="0" step="100" onchange="updateCostField(${m.id},'price',this.value)" style="max-width:80px;"></div>
-        <div class="mc-field"><span class="lbl">占比</span><input type="number" value="${m.costPct}" placeholder="100" min="0" max="100" step="0.01" onchange="updateCostField(${m.id},'costPct',this.value)" style="max-width:55px;"><span class="tiny">%</span></div>
+        <div class="mc-field"><span class="lbl">单价</span><input type="number" value="${m.price}" placeholder="32000" min="0" step="100" oninput="costCardInput(${m.id},'price',this.value)" onblur="costCardInput(${m.id},'price',this.value,true)" style="max-width:80px;"></div>
+        <div class="mc-field"><span class="lbl">占比</span><input type="number" value="${m.costPct}" placeholder="100" min="0" max="100" step="0.01" oninput="costCardInput(${m.id},'costPct',this.value)" onblur="costCardInput(${m.id},'costPct',this.value,true)" style="max-width:55px;"><span class="tiny">%</span></div>
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">欠重</span><input type="number" value="${m.shortWeight}" placeholder="0.5" min="0" step="0.01" onchange="updateCostField(${m.id},'shortWeight',this.value)" style="max-width:55px;"></div>
-        <div class="mc-field"><span class="lbl">织损率</span><input type="number" value="${m.lossRate}" placeholder="1" min="0" max="100" step="0.1" onchange="updateCostField(${m.id},'lossRate',this.value)" style="max-width:55px;"><span class="tiny">%</span></div>
+        <div class="mc-field"><span class="lbl">欠重</span><input type="number" value="${m.shortWeight}" placeholder="0.5" min="0" step="0.01" oninput="costCardInput(${m.id},'shortWeight',this.value)" onblur="costCardInput(${m.id},'shortWeight',this.value,true)" style="max-width:55px;"></div>
+        <div class="mc-field"><span class="lbl">织损率</span><input type="number" value="${m.lossRate}" placeholder="1" min="0" max="100" step="0.1" oninput="costCardInput(${m.id},'lossRate',this.value)" onblur="costCardInput(${m.id},'lossRate',this.value,true)" style="max-width:55px;"><span class="tiny">%</span></div>
       </div>
     </div>`).join('');
   calcCost();
