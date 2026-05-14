@@ -171,6 +171,54 @@
       grid-template-columns: 1fr;
     }
   }
+
+  /* ── 手机端适配 ── */
+  @media (max-width: 600px) {
+    body { padding: 8px; }
+    .app { max-width: 100%; }
+    .sheet { padding: 12px; }
+    .header .brand { font-size: 22px; letter-spacing: 4px; }
+    .header .title { font-size: 14px; }
+    .topbar { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .topbar-actions { flex-wrap: wrap; gap: 4px; }
+    .topbar-actions button { font-size: 11px; padding: 5px 10px; }
+
+    /* 原料表横滑 */
+    .mat-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .mat-table { font-size: 12px; min-width: 480px; }
+    .mat-table th { font-size: 10px; padding: 6px 3px; }
+    .mat-table td { padding: 4px 2px; }
+    .mat-table input, .mat-table select { font-size: 12px; padding: 5px 3px; }
+
+    /* 成本表横滑 */
+    .cost-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .cost-table { font-size: 12px; min-width: 520px; }
+    .cost-table th { font-size: 10px; padding: 5px 3px; white-space: nowrap; }
+    .cost-table td { padding: 3px 2px; }
+    .cost-table input, .cost-table select { font-size: 12px; padding: 4px 3px; }
+
+    .cost-line-item { flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
+    .cost-line-item input { width: 100%; text-align: left; }
+    .cost-subtotal, .cost-grand-total { font-size: 14px; padding: 8px 10px; }
+
+    .field label { font-size: 11px; }
+    .field input, .field select { font-size: 14px; padding: 10px 8px; }
+    .add-row-btn { font-size: 12px; padding: 8px 12px; }
+
+    .result-grid { grid-template-columns: 1fr 1fr 1fr; }
+    .result-item { padding: 10px; }
+    .result-item .value { font-size: 18px; }
+
+    .cost-line-item input { font-size: 14px; padding: 8px; }
+  }
+
+  @media (max-width: 420px) {
+    .mat-table { min-width: 440px; }
+    .cost-table { min-width: 460px; }
+    .result-grid { grid-template-columns: 1fr; }
+    .result-item { padding: 8px; border-right: none; border-bottom: 1px solid var(--accent-light); }
+    .result-item:last-child { border-bottom: none; }
+  }
   .field { margin-bottom: 0; }
   .field label {
     display: block;
@@ -509,6 +557,7 @@
     <div>
       <div class="sheet">
         <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:12px;">原 料</div>
+    <div class="mat-table-wrapper">
         <table class="mat-table">
           <thead>
             <tr>
@@ -523,6 +572,7 @@
           </thead>
           <tbody id="matBody"></tbody>
         </table>
+    </div>
         <button class="add-row-btn" onclick="addMaterial()">+ 添加原料</button>
       </div>
     </div>
@@ -587,6 +637,7 @@
 
     <!-- 原料占比 -->
     <div style="font-size:12px;font-weight:600;color:var(--accent);margin:14px 0 8px;letter-spacing:1px;">原料占比</div>
+    <div class="cost-table-wrapper">
     <table class="cost-table">
       <thead>
         <tr>
@@ -602,6 +653,7 @@
       </thead>
       <tbody id="costBody"></tbody>
     </table>
+    </div>
     <button class="add-row-btn" onclick="addCostMaterial()">+ 添加材料</button>
 
     <!-- 纱线成本合计 -->
