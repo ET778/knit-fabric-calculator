@@ -167,7 +167,7 @@
     .mat-card-container, .cost-card-container { display: block !important; }
   }
 
-  .mat-card, .cost-card { background: var(--card); border: 1px solid var(--line); padding: 10px 12px; margin-bottom: 8px; }
+  .mat-card, .cost-card { background: var(--card); border: 1px solid var(--line); padding: 10px 12px; margin-bottom: 8px; position: relative; z-index: 2; }
   .mat-card-header, .cost-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
   .mat-card-header .num, .cost-card-header .num { font-weight: 700; color: var(--accent); font-size: 13px; }
   .mat-card-header .mid-pct { font-weight: 700; color: var(--accent); font-size: 16px; flex: 1; text-align: center; }
@@ -183,7 +183,7 @@
   .mc-field .lbl { font-size: 11px; color: var(--accent-light); white-space: nowrap; }
   .mc-field input, .mc-field select {
     padding: 6px; background: transparent; border: none; border-bottom: 1px solid var(--line);
-    color: var(--ink); font-size: 16px; font-family: inherit; outline: none;
+    color: var(--ink); font-size: 16px; font-family: inherit; outline: none; width: auto; min-width: 50px;
   }
   .mc-field select option { background: #f5ebd0; color: #1a1a1a; }
   .mc-field .val { font-weight: 700; color: var(--accent); font-size: 14px; }
@@ -347,7 +347,7 @@ function renderMats() {
     <div class="mat-card">
       <div class="mat-card-header">
         <span class="num">#${i + 1}</span>
-        <span class="mid-pct">成分占比 <span id="propCard-${m.id}">—</span></span>
+        <span class="mid-pct">占比 <span id="propCard-${m.id}">—</span></span>
         ${raw.length > 1 ? `<button class="card-del" onclick="removeMaterial(${m.id})">×</button>` : ''}
       </div>
       <div class="mat-card-row">
