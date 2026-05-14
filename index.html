@@ -172,7 +172,7 @@
     }
   }
 
-  /* ── 手机端适配 ── */
+  /* ── 手机端适配：卡片式布局 ── */
   @media (max-width: 600px) {
     body { padding: 8px; }
     .app { max-width: 100%; }
@@ -182,42 +182,174 @@
     .topbar { flex-direction: column; align-items: flex-start; gap: 6px; }
     .topbar-actions { flex-wrap: wrap; gap: 4px; }
     .topbar-actions button { font-size: 11px; padding: 5px 10px; }
+    .field-row-2 { grid-template-columns: 1fr 1fr; gap: 6px; }
 
-    /* 原料表横滑 */
-    .mat-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .mat-table { font-size: 12px; min-width: 480px; }
-    .mat-table th { font-size: 10px; padding: 6px 3px; }
-    .mat-table td { padding: 4px 2px; }
-    .mat-table input, .mat-table select { font-size: 12px; padding: 5px 3px; }
-
-    /* 成本表横滑 */
-    .cost-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .cost-table { font-size: 12px; min-width: 520px; }
-    .cost-table th { font-size: 10px; padding: 5px 3px; white-space: nowrap; }
-    .cost-table td { padding: 3px 2px; }
-    .cost-table input, .cost-table select { font-size: 12px; padding: 4px 3px; }
-
-    .cost-line-item { flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
-    .cost-line-item input { width: 100%; text-align: left; }
-    .cost-subtotal, .cost-grand-total { font-size: 14px; padding: 8px 10px; }
+    /* PC表格隐藏，手机卡片显示 */
+    .mat-table-wrapper, .cost-table-wrapper { display: none !important; }
+    .mat-card-container, .cost-card-container { display: block !important; }
 
     .field label { font-size: 11px; }
     .field input, .field select { font-size: 14px; padding: 10px 8px; }
     .add-row-btn { font-size: 12px; padding: 8px 12px; }
-
     .result-grid { grid-template-columns: 1fr 1fr 1fr; }
     .result-item { padding: 10px; }
     .result-item .value { font-size: 18px; }
-
     .cost-line-item input { font-size: 14px; padding: 8px; }
+    .cost-subtotal, .cost-grand-total { font-size: 14px; padding: 8px 10px; }
+    .cost-line-item { flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
+    .cost-line-item input { width: 100%; text-align: left; }
   }
 
   @media (max-width: 420px) {
-    .mat-table { min-width: 440px; }
-    .cost-table { min-width: 460px; }
     .result-grid { grid-template-columns: 1fr; }
     .result-item { padding: 8px; border-right: none; border-bottom: 1px solid var(--accent-light); }
     .result-item:last-child { border-bottom: none; }
+  }
+
+  /* ── 手机端原料卡片 ── */
+  .mat-card-container { display: none; }
+  .mat-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .mat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .mat-card-header .num {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 13px;
+  }
+  .mat-card-header .del-btn {
+    width: 28px; height: 28px;
+    border: 1px solid #d4a0a0;
+    background: transparent;
+    color: #b07070;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mat-card-header .del-btn:hover { background: #d4a0a0; color: #fff; }
+  .mat-card-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin-bottom: 4px;
+  }
+  .mat-card-row:last-child { margin-bottom: 0; }
+  .mat-card-field {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .mat-card-field .mlabel {
+    font-size: 11px;
+    color: var(--accent-light);
+    white-space: nowrap;
+  }
+  .mat-card-field input, .mat-card-field select {
+    padding: 6px 6px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    max-width: 90px;
+  }
+  .mat-card-field select option {
+    background: #f5ebd0;
+    color: #1a1a1a;
+  }
+  .mat-card-field input:focus, .mat-card-field select:focus { border-bottom-color: var(--accent); }
+  .mat-card-field .prop-pct {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 14px;
+  }
+  .mat-card-field .cm-label {
+    font-size: 10px;
+    color: var(--accent-light);
+  }
+
+  /* ── 手机端成本卡片 ── */
+  .cost-card-container { display: none; }
+  .cost-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .cost-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .cost-card-header .title { font-weight: 600; color: var(--accent); font-size: 13px; }
+  .cost-card-header .num { font-weight: 700; color: var(--accent); font-size: 13px; }
+  .cost-card-header .del-btn {
+    width: 28px; height: 28px;
+    border: 1px solid #d4a0a0;
+    background: transparent;
+    color: #b07070;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cost-card-header .del-btn:hover { background: #d4a0a0; color: #fff; }
+  .cost-card-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin-bottom: 3px;
+  }
+  .cost-card-field {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .cost-card-field .clabel {
+    font-size: 11px;
+    color: var(--accent-light);
+    white-space: nowrap;
+  }
+  .cost-card-field input, .cost-card-field select {
+    padding: 5px 6px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    max-width: 80px;
+  }
+  .cost-card-field select option {
+    background: #f5ebd0;
+    color: #1a1a1a;
+  }
+  .cost-card-field input:focus, .cost-card-field select:focus { border-bottom-color: var(--accent); }
+  .cost-card-field .cost-pct {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 14px;
   }
   .field { margin-bottom: 0; }
   .field label {
@@ -573,6 +705,7 @@
           <tbody id="matBody"></tbody>
         </table>
     </div>
+    <div class="mat-card-container" id="matCardContainer"></div>
         <button class="add-row-btn" onclick="addMaterial()">+ 添加原料</button>
       </div>
     </div>
@@ -654,6 +787,7 @@
       <tbody id="costBody"></tbody>
     </table>
     </div>
+    <div class="cost-card-container" id="costCardContainer"></div>
     <button class="add-row-btn" onclick="addCostMaterial()">+ 添加材料</button>
 
     <!-- 纱线成本合计 -->
@@ -735,7 +869,12 @@
   }
 
   function renderMats() {
+    const isMobile = window.innerWidth <= 600;
     const tbody = document.getElementById('matBody');
+    const cardContainer = document.getElementById('matCardContainer');
+    if (!tbody || !cardContainer) return;
+
+    // Always render table (hidden on mobile via CSS)
     tbody.innerHTML = materials.map((m, i) => `
       <tr>
         <td style="font-weight:600;color:var(--accent);font-size:12px;">${i + 1}</td>
@@ -746,6 +885,41 @@
         <td class="prop-cell" id="prop-${m.id}">—</td>
         <td>${materials.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}</td>
       </tr>
+    `).join('');
+
+    // Render cards (hidden on desktop via CSS)
+    cardContainer.innerHTML = materials.map((m, i) => `
+      <div class="mat-card">
+        <div class="mat-card-header">
+          <span class="num">#${i + 1}</span>
+          ${materials.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}
+        </div>
+        <div class="mat-card-row">
+          <div class="mat-card-field">
+            <span class="mlabel">规格</span>
+            <input type="number" value="${m.spec}" placeholder="如 32" min="1" step="0.1" onchange="updateMat(${m.id},'spec',this.value)">
+          </div>
+          <div class="mat-card-field">
+            <span class="mlabel">单位</span>
+            <select onchange="updateMat(${m.id},'unit',this.value)">${unitOptions(m.unit)}</select>
+          </div>
+        </div>
+        <div class="mat-card-row">
+          <div class="mat-card-field">
+            <span class="mlabel">纱长</span>
+            <input type="number" value="${m.yarnLen}" placeholder="如 28" min="0" step="0.1" onchange="updateMat(${m.id},'yarnLen',this.value)" style="max-width:70px;">
+            <span class="cm-label">cm/100针</span>
+          </div>
+          <div class="mat-card-field">
+            <span class="mlabel">路数</span>
+            <input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="updateMat(${m.id},'luShu',this.value)" style="max-width:55px;">
+          </div>
+          <div class="mat-card-field">
+            <span class="mlabel">占比</span>
+            <span class="prop-pct" id="propCard-${m.id}">—</span>
+          </div>
+        </div>
+      </div>
     `).join('');
   }
 
@@ -788,10 +962,12 @@
       </div>
     `).join('');
 
-    // 更新每个材料的占比单元格
+    // 更新每个材料的占比单元格（table + card）
     propEls.forEach(p => {
       const el = document.getElementById('prop-' + p.id);
       if (el) el.textContent = p.pct.toFixed(2) + '%';
+      const cardEl = document.getElementById('propCard-' + p.id);
+      if (cardEl) cardEl.textContent = p.pct.toFixed(2) + '%';
     });
 
     // 显示成分占比面板
@@ -846,7 +1022,10 @@
 
   function renderCostTable() {
     const tbody = document.getElementById('costBody');
-    if (!tbody) return;
+    const cardContainer = document.getElementById('costCardContainer');
+    if (!tbody || !cardContainer) return;
+
+    // Table rows
     tbody.innerHTML = materials.map((m, i) => {
       const unit = m.unit || 's';
       return `
@@ -860,6 +1039,56 @@
           <td class="cost-val" id="costVal-${m.id}">—</td>
           <td>${materials.length > 1 ? `<button class="del-btn" onclick="removeCostMaterial(${m.id})">×</button>` : ''}</td>
         </tr>
+      `;
+    }).join('');
+
+    // Card rows
+    cardContainer.innerHTML = materials.map((m, i) => {
+      const unit = m.unit || 's';
+      return `
+        <div class="cost-card">
+          <div class="cost-card-header">
+            <span class="num">#${i + 1}</span>
+            ${materials.length > 1 ? `<button class="del-btn" onclick="removeCostMaterial(${m.id})">×</button>` : ''}
+          </div>
+          <div class="cost-card-row">
+            <div class="cost-card-field">
+              <span class="clabel">材料</span>
+              <input type="text" value="${m.costName || ''}" placeholder="如 棉纱" onchange="updateCostField(${m.id},'costName',this.value)" style="max-width:90px;">
+            </div>
+            <div class="cost-card-field">
+              <span class="clabel">单位</span>
+              <select onchange="updateCostField(${m.id},'unit',this.value)">${costUnitOptions(unit)}</select>
+            </div>
+            <div class="cost-card-field">
+              <span class="clabel">单价</span>
+              <input type="number" value="${m.price}" placeholder="如 32000" min="0" step="100" onchange="updateCostField(${m.id},'price',this.value)" style="max-width:80px;">
+            </div>
+          </div>
+          <div class="cost-card-row">
+            <div class="cost-card-field">
+              <span class="clabel">占比</span>
+              <input type="number" value="${m.costPct}" placeholder="如 100" min="0" max="100" step="0.01" onchange="updateCostField(${m.id},'costPct',this.value)" style="max-width:60px;">
+              <span style="font-size:10px;color:var(--accent-light);">%</span>
+            </div>
+            <div class="cost-card-field">
+              <span class="clabel">欠重</span>
+              <input type="number" value="${m.shortWeight}" placeholder="如 0.5" min="0" step="0.01" onchange="updateCostField(${m.id},'shortWeight',this.value)" style="max-width:55px;">
+            </div>
+            <div class="cost-card-field">
+              <span class="clabel">织损率</span>
+              <input type="number" value="${m.lossRate}" placeholder="如 1" min="0" max="100" step="0.1" onchange="updateCostField(${m.id},'lossRate',this.value)" style="max-width:55px;">
+              <span style="font-size:10px;color:var(--accent-light);">%</span>
+            </div>
+          </div>
+          <div class="cost-card-row">
+            <div class="cost-card-field">
+              <span class="clabel">成本</span>
+              <span class="cost-pct" id="costValCard-${m.id}">—</span>
+              <span style="font-size:10px;color:var(--accent-light);">元/吨</span>
+            </div>
+          </div>
+        </div>
       `;
     }).join('');
     calcCost();
@@ -931,6 +1160,8 @@
       const cost = (pct / 100) * price;
       const el = document.getElementById('costVal-' + m.id);
       if (el) el.textContent = cost.toFixed(2);
+      const cardEl = document.getElementById('costValCard-' + m.id);
+      if (cardEl) cardEl.textContent = cost.toFixed(2);
       totalYarnCost += cost;
     });
 
@@ -1107,6 +1338,12 @@
   }
   loadCostCache();
   setTimeout(renderCostTable, 100);
+  // 手机横竖屏切换时重新渲染
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { renderMats(); renderCostTable(); }, 300);
+  });
 </script>
 </body>
 </html>
