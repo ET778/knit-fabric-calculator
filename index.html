@@ -1,662 +1,502 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>生华布行 · 针织核算器</title>
-<style>
-  :root {
-    --paper: #f5ebd0;
-    --paper-dark: #1a1a22;
-    --ink: #2c2c2c;
-    --ink-dark: #e0e0e0;
-    --line: #d4cec0;
-    --line-dark: #2d2d3a;
-    --accent: #8b6f47;
-    --accent-light: #c4a97d;
-    --watermark: rgba(139,111,71,0.06);
-    --watermark-dark: rgba(196,169,125,0.05);
-    --card: rgba(255,255,255,0.7);
-    --card-dark: rgba(30,30,38,0.7);
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'Noto Serif SC', 'STSong', 'SimSun', serif;
-    background: var(--paper);
-    color: var(--ink);
-    min-height: 100vh;
-    padding: 20px;
-    transition: background 0.4s, color 0.4s;
-    position: relative;
-  }
-  body::before {
-    content: '';
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; z-index: 0;
-    background:
-      radial-gradient(ellipse at 50% 30%, var(--watermark) 0%, transparent 60%),
-      repeating-linear-gradient(90deg, transparent, transparent 8px, var(--line) 8px, var(--line) 8.5px, transparent 8.5px, transparent 20px),
-      repeating-linear-gradient(0deg, transparent, transparent 35px, var(--line) 35px, var(--line) 36px);
-    opacity: 0.5;
-  }
-  body.dark {
-    --paper: #1a1a22; --ink: #e0e0e0; --line: #2d2d3a;
-    --accent: #c4a97d; --card: rgba(30,30,38,0.7);
-  }
-  body.dark::before { opacity: 0.3; }
-  .app { max-width: 960px; margin: 0 auto; position: relative; z-index: 1; }
-  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-  .topbar-actions { display: flex; gap: 8px; }
-  .topbar-actions button {
-    padding: 6px 14px; border: 1px solid var(--accent); background: transparent;
-    color: var(--accent); font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.2s;
-  }
-  .topbar-actions button:hover { background: var(--accent); color: #fff; }
-  .header { text-align: center; padding: 20px 0 16px; position: relative; }
-  .header::after { content: ''; display: block; width: 120px; height: 2px; background: var(--accent); margin: 12px auto 0; }
-  .header .brand { font-size: 28px; font-weight: 700; letter-spacing: 6px; color: var(--accent); }
-  .header .brand-en { font-size: 11px; letter-spacing: 3px; color: var(--accent-light); margin-top: 2px; font-family: 'Times New Roman', serif; }
-  .header .title { font-size: 16px; font-weight: 600; margin-top: 8px; color: var(--ink); }
-  .sheet { background: var(--card); border: 1px solid var(--line); padding: 16px 20px; margin-bottom: 12px; transition: background 0.3s; }
-  .grid-2col { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; }
-  .field-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-  @media (max-width: 700px) { .grid-2col, .field-row-2 { grid-template-columns: 1fr; } }
-  .field { margin-bottom: 0; }
-  .field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 3px; color: var(--accent); letter-spacing: 1px; }
-  .field label .hint { font-weight: 400; color: var(--accent-light); font-size: 11px; }
-  .field input, .field select {
-    width: 100%; padding: 8px 10px; background: transparent; border: none; border-bottom: 1.5px solid var(--line);
-    color: var(--ink); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s;
-  }
-  .field input:focus, .field select:focus { border-bottom-color: var(--accent); }
-  .field input::placeholder { color: var(--line); font-style: italic; font-size: 12px; }
-
-  /* 材料表格 */
-  .mat-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .mat-table th { text-align: left; padding: 8px 6px; font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.5px; border-bottom: 2px solid var(--accent-light); }
-  .mat-table td { padding: 6px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
-  .mat-table input, .mat-table select { width: 100%; padding: 6px 4px; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 13px; font-family: inherit; outline: none; }
-  .mat-table select option { background: #f5ebd0; color: #1a1a1a; }
-  .mat-table select:focus { border-bottom-color: var(--accent); }
-  .mat-table .del-btn, .cost-table .del-btn {
-    width: 28px; height: 28px; border: 1px solid #d4a0a0; background: transparent; color: #b07070;
-    cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;
-  }
-  .mat-table .del-btn:hover, .cost-table .del-btn:hover { background: #d4a0a0; color: #fff; }
-  .mat-table .prop-cell { font-weight: 600; color: var(--accent); font-size: 12px; white-space: nowrap; }
-  .add-row-btn {
-    padding: 6px 16px; margin-top: 8px; background: transparent; border: 1px dashed var(--accent-light);
-    color: var(--accent); cursor: pointer; font-size: 12px; font-family: inherit; transition: all 0.2s;
-  }
-  .add-row-btn:hover { background: var(--accent); color: #fff; border-style: solid; }
-
-  /* 结果 */
-  .result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; border: 1px solid var(--accent-light); }
-  .result-item { padding: 16px; text-align: center; border-right: 1px solid var(--accent-light); border-bottom: 1px solid var(--accent-light); }
-  .result-item:last-child { border-right: none; }
-  .result-item .label { font-size: 11px; color: var(--accent); letter-spacing: 1px; margin-bottom: 4px; }
-  .result-item .value { font-size: 22px; font-weight: 700; color: var(--ink); font-family: 'Times New Roman', serif; }
-  .result-item .value .unit { font-size: 12px; font-weight: 400; color: var(--accent-light); margin-left: 2px; }
-
-  .prop-bar-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-  .prop-bar-item .pname { font-size: 12px; min-width: 50px; color: var(--ink); }
-  .prop-bar-item .ptrack { flex: 1; height: 14px; background: var(--line); overflow: hidden; }
-  .prop-bar-item .pfill { height: 100%; background: var(--accent); transition: width 0.3s; }
-  .prop-bar-item .ppct { font-size: 11px; font-weight: 600; min-width: 45px; text-align: right; color: var(--accent); }
-
-  /* 成本模块 */
-  .section-title { font-size: 14px; font-weight: 600; color: var(--accent); letter-spacing: 2px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--accent-light); }
-  .cost-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 6px; }
-  .cost-table th { text-align: left; padding: 5px 4px; font-size: 11px; font-weight: 600; color: var(--accent); border-bottom: 2px solid var(--accent-light); }
-  .cost-table td { padding: 3px 4px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
-  .cost-table input, .cost-table select { width: 100%; padding: 4px; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 13px; font-family: inherit; outline: none; }
-  .cost-table input:focus, .cost-table select:focus { border-bottom-color: var(--accent); }
-  .cost-table select option { background: #f5ebd0; color: #1a1a1a; }
-  .cost-table .cost-val { font-weight: 600; color: var(--accent); font-size: 12px; text-align: right; padding-right: 6px; }
-  .cost-subtotal { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-top: 6px; background: rgba(139,111,71,0.05); border: 1px solid var(--accent-light); font-size: 14px; font-weight: 600; color: var(--ink); }
-  .cost-subtotal span:last-child { color: var(--accent); }
-  .cost-line-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-top: 6px; border: 1px solid var(--line); font-size: 14px; color: var(--ink); }
-  .cost-line-item input { width: 160px; padding: 4px 8px; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 14px; font-family: inherit; outline: none; text-align: right; }
-  .cost-line-item input:focus { border-bottom-color: var(--accent); }
-  .cost-auto { background: rgba(139,111,71,0.04); border-color: var(--accent-light); }
-  .cost-auto span:last-child { font-weight: 600; color: var(--accent); }
-  .cost-grand-total { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; margin-top: 8px; background: rgba(139,111,71,0.1); border: 2px solid var(--accent); font-size: 17px; font-weight: 700; color: var(--ink); }
-  .cost-grand-total span:last-child { color: var(--accent); }
-
-  @media print {
-    body { background: #f5ebd0 !important; padding: 0; }
-    body::before { display: none !important; }
-    .topbar { display: none !important; }
-    .sheet { break-inside: avoid; border: 1px solid #ccc; background: #faf7f0; }
-    .no-print { display: none !important; }
-  }
-
-  /* ===== 手机端 ===== */
-  @media (max-width: 600px) {
-    body { padding: 8px; }
-    .app { max-width: 100%; }
-    .sheet { padding: 10px; }
-    .header .brand { font-size: 22px; letter-spacing: 4px; }
-    .header .title { font-size: 14px; }
-    .topbar { flex-direction: column; align-items: flex-start; gap: 6px; }
-    .topbar-actions { flex-wrap: wrap; gap: 4px; }
-    .topbar-actions button { font-size: 11px; padding: 5px 10px; }
-    .field-row-2 { grid-template-columns: 1fr 1fr; gap: 6px; }
-    .grid-2col { grid-template-columns: 1fr; }
-    input, select, textarea { touch-action: manipulation; }
-    .field label { font-size: 11px; }
-    .field input, .field select { font-size: 14px; padding: 10px 8px; }
-    .add-row-btn { font-size: 12px; padding: 8px 12px; }
-    .result-grid { grid-template-columns: 1fr 1fr 1fr; }
-    .result-item { padding: 10px; }
-    .result-item .value { font-size: 18px; }
-    .cost-subtotal, .cost-grand-total { font-size: 14px; padding: 8px 10px; }
-    .cost-line-item { flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
-    .cost-line-item input { width: 100%; text-align: left; }
-  }
-  @media (max-width: 420px) {
-    .result-grid { grid-template-columns: 1fr; }
-    .result-item { padding: 8px; border-right: none; border-bottom: 1px solid var(--accent-light); }
-    .result-item:last-child { border-bottom: none; }
-  }
-
-  /* ===== 手机端卡片 ===== */
-  .mat-card-container, .cost-card-container { display: none; }
-  @media (max-width: 600px) {
-    .mat-table-wrapper, .cost-table-wrapper { display: none !important; }
-    .mat-card-container, .cost-card-container { display: block !important; }
-  }
-
-  .mat-card, .cost-card { background: var(--card); border: 1px solid var(--line); padding: 10px 12px; margin-bottom: 8px; position: relative; z-index: 2; }
-  .mat-card-header, .cost-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
-  .mat-card-header .num, .cost-card-header .num { font-weight: 700; color: var(--accent); font-size: 13px; }
-  .mat-card-header .mid-pct { font-weight: 700; color: var(--accent); font-size: 16px; flex: 1; text-align: center; }
-  .cost-card-header .mid-pct { font-weight: 700; color: var(--accent); font-size: 14px; flex: 1; text-align: right; }
-  .card-del {
-    width: 28px; height: 28px; border: 1px solid #d4a0a0; background: transparent; color: #b07070;
-    cursor: pointer; font-size: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .card-del:hover { background: #d4a0a0; color: #fff; }
-  .mat-card-row, .cost-card-row { display: flex; flex-wrap: wrap; gap: 5px 8px; margin-bottom: 3px; }
-  .mat-card-row:last-child, .cost-card-row:last-child { margin-bottom: 0; }
-  .mc-field { display: flex; align-items: center; gap: 4px; }
-  .mc-field .lbl { font-size: 11px; color: var(--accent-light); white-space: nowrap; }
-  .mc-field input, .mc-field select {
-    padding: 6px; background: transparent; border: none; border-bottom: 1px solid var(--line);
-    color: var(--ink); font-size: 16px; font-family: inherit; outline: none; width: auto; min-width: 50px;
-  }
-  .mc-field select option { background: #f5ebd0; color: #1a1a1a; }
-  .mc-field .val { font-weight: 700; color: var(--accent); font-size: 14px; }
-  .mc-field .tiny { font-size: 10px; color: var(--accent-light); }
-</style>
-</head>
-<body>
-<div class="app">
-  <div class="topbar">
-    <div></div>
-    <div class="topbar-actions">
-      <button onclick="toggleTheme()">🌓 主题</button>
-      <button onclick="resetForm()">↺ 重置</button>
-      <button onclick="window.print()">🖨 打印</button>
-      <button onclick="exportImage()">📷 导出图片</button>
-    </div>
-  </div>
-
-  <div class="header">
-    <div class="brand">生 华 布 行</div>
-    <div class="brand-en">SHENGHUA FABRIC CO.</div>
-    <div class="title">针织核算器</div>
-  </div>
-
-  <div class="grid-2col">
-    <!-- 左栏：成分占比 -->
-    <div>
-      <div class="sheet">
-        <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:10px;">成分占比</div>
-        <div class="mat-table-wrapper">
-          <table class="mat-table">
-            <thead><tr>
-              <th style="width:32px;">#</th><th style="width:75px;">规格</th><th style="width:80px;">单位</th>
-              <th style="width:95px;">纱长(100针)</th><th style="width:65px;">路数</th><th style="width:60px;">占比</th><th style="width:32px;"></th>
-            </tr></thead>
-            <tbody id="matBody"></tbody>
-          </table>
-        </div>
-        <div class="mat-card-container" id="matCardContainer"></div>
-        <button class="add-row-btn" onclick="addMaterial('', 's', '', '')">+ 添加原料</button>
-      </div>
-    </div>
-
-    <!-- 右栏：机台参数 + 产量 -->
-    <div>
-      <div class="sheet" id="rightPanel">
-        <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:10px;">机 台 参 数</div>
-        <div class="field"><label>总针数 <span class="hint">Z</span></label><input type="number" id="totalNeedles" placeholder="如 1740" oninput="calcAll();saveCache()"></div>
-        <div class="field-row-2">
-          <div class="field"><label>转速 <span class="hint">r/min</span></label><input type="number" id="speed" placeholder="如 22" step="0.1" oninput="calcAll();saveCache()"></div>
-          <div class="field"><label>效率 <span class="hint">0-1</span></label><input type="number" id="efficiency" placeholder="如 0.88" min="0" max="1" step="0.01" oninput="calcAll();saveCache()"></div>
-        </div>
-        <div class="field-row-2">
-          <div class="field"><label>单价 <span class="hint">元/kg</span></label><input type="number" id="unitPrice" placeholder="如 42" step="0.01" oninput="calcAll();saveCache()"></div>
-          <div class="field"><label>布重 <span class="hint">kg/圈</span></label><input type="number" id="rollWeight" placeholder="如 25" step="0.1" value="25" oninput="calcAll();saveCache()"></div>
-        </div>
-        <div id="resultSheet" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--accent-light);">
-          <div style="font-size:12px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:6px;">产 量 结 果</div>
-          <div class="result-grid">
-            <div class="result-item"><div class="label">日产量</div><div class="value"><span id="dailyYield">—</span><span class="unit">kg</span></div></div>
-            <div class="result-item"><div class="label">日产值</div><div class="value"><span id="dailyValue">—</span><span class="unit">元</span></div></div>
-            <div class="result-item"><div class="label">落布圈</div><div class="value"><span id="doffRevol">—</span><span class="unit">圈</span></div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 胚布成本 -->
-  <div class="sheet" id="costModule" style="margin-top:12px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div class="section-title" style="margin-bottom:0;border:none;">胚 布 成 本 计 算</div>
-      <button onclick="exportCostImage()" style="padding:4px 12px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit;">📷 导出图片</button>
-    </div>
-    <div class="field-row-2">
-      <div class="field"><label>客户名称</label><input type="text" id="customerName" placeholder="请输入" oninput="saveCostCache()"></div>
-      <div class="field"><label>跟单员</label><input type="text" id="follower" placeholder="请输入" oninput="saveCostCache()"></div>
-    </div>
-
-    <div style="font-size:12px;font-weight:600;color:var(--accent);margin:14px 0 6px;letter-spacing:1px;">原料占比</div>
-    <div class="cost-table-wrapper">
-      <table class="cost-table">
-        <thead><tr>
-          <th style="min-width:220px;">材料</th><th style="width:85px;">单位</th><th style="width:85px;">单价(元/吨)</th>
-          <th style="width:70px;">占比%</th><th style="width:70px;">欠重</th><th style="width:70px;">织损率%</th>
-          <th style="width:90px;">成本(元/吨)</th><th style="width:32px;"></th>
-        </tr></thead>
-        <tbody id="costBody"></tbody>
-      </table>
-    </div>
-    <div class="cost-card-container" id="costCardContainer"></div>
-    <button class="add-row-btn" onclick="addCostMaterial()">+ 添加材料</button>
-
-    <div class="cost-subtotal"><span>纱线成本合计</span><span><span id="yarnTotalCost">0.00</span> 元/吨</span></div>
-    <div class="cost-line-item"><label>织造费 <span style="font-weight:400;color:var(--accent-light);font-size:12px;">元/吨</span></label><input type="number" id="weavingFee" placeholder="如 3500" step="10" oninput="calcCost();saveCostCache()"></div>
-    <div class="cost-line-item cost-auto"><label>织损费 <span style="font-weight:400;color:var(--accent-light);font-size:12px;">欠重+织损</span></label><span><span id="lossFeeDisplay">0.00</span> 元/吨</span></div>
-    <div class="cost-line-item"><label>网费/其他 <span style="font-weight:400;color:var(--accent-light);font-size:12px;">元/吨</span></label><input type="number" id="extraFee" placeholder="如 500" step="10" oninput="calcCost();saveCostCache()"></div>
-    <div class="cost-grand-total"><span>胚布总成本</span><span><span id="greigeTotalCost">0.00</span> 元/吨</span></div>
-  </div>
-</div>
-
-<script>
-// ── 数据 ──
-let materials = [], idCounter = 0;
-const UNIT_CONV = {
-  's': { label: '英支 S', convert: v => v },
-  'd_cotton': { label: '丝类 D', convert: d => 5315 / d },
-  'd_spandex': { label: '氨纶 D', convert: d => 5200 / d },
-};
-
-// ── 渲染 ──
-function uOpt(sel) {
-  return Object.entries(UNIT_CONV).map(([k, v]) =>
-    `<option value="${k}" ${k===sel?'selected':''}>${v.label}</option>`).join('');
-}
-function addMaterial(spec, unit, yarnLen, luShu) {
-  const id = ++idCounter;
-  materials.push({ id, spec: spec ?? '', unit: unit || 's', yarnLen: yarnLen ?? '', luShu: luShu ?? '', costName: '', price: '', lossRate: '', costPct: '', shortWeight: '' });
-  renderAll(); saveAll();
-}
-function removeMaterial(id) {
-  if (materials.length <= 1) return;
-  materials = materials.filter(m => m.id !== id);
-  renderAll(); saveAll();
-}
-function updateMat(id, field, val) {
-  const m = materials.find(x => x.id === id);
-  if (m) { m[field] = val; }
-  renderAll();
-  saveAll();
-}
-
-function renderAll() {
-  renderMats(); renderCostTable(); calcAll();
-}
-
-function renderMats() {
-  const tb = document.getElementById('matBody');
-  const cc = document.getElementById('matCardContainer');
-  if (!tb || !cc) return;
-  const raw = materials.filter(m => {
-    const s = parseFloat(m.spec) || 0;
-    const y = parseFloat(m.yarnLen) || 0;
-    return s > 0 && y > 0;
-  });
-
-  // PC 表格
-  tb.innerHTML = raw.map((m, i) => `
-    <tr>
-      <td style="font-weight:600;color:var(--accent);font-size:12px;">${i + 1}</td>
-      <td><input type="number" value="${m.spec}" placeholder="如 32" min="1" step="0.1" onchange="updateMat(${m.id},'spec',this.value)"></td>
-      <td><select onchange="updateMat(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></td>
-      <td><input type="number" value="${m.yarnLen}" placeholder="如 28" min="0" step="0.1" onchange="updateMat(${m.id},'yarnLen',this.value)" style="width:calc(100% - 28px);display:inline;"><span style="font-size:10px;color:var(--accent-light);">cm</span></td>
-      <td><input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="updateMat(${m.id},'luShu',this.value)"></td>
-      <td class="prop-cell" id="prop-${m.id}">—</td>
-      <td>${raw.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}</td>
-    </tr>`).join('');
-
-  // 手机卡片（onblur 保存+重渲染，避免打字时频繁替换 DOM 导致键盘退出）
-  cc.innerHTML = raw.map((m, i) => `
-    <div class="mat-card">
-      <div class="mat-card-header">
-        <span class="num">#${i + 1}</span>
-        <span class="mid-pct">占比 <span id="propCard-${m.id}">—</span></span>
-        ${raw.length > 1 ? `<button class="card-del" onclick="removeMaterial(${m.id})">×</button>` : ''}
-      </div>
-      <div class="mat-card-row">
-        <div class="mc-field"><span class="lbl">规格</span><input type="number" value="${m.spec}" placeholder="32" min="1" step="0.1" onchange="cardValueChanged(${m.id},'spec',this.value)"></div>
-        <div class="mc-field"><span class="lbl">单位</span><select onchange="cardValueChanged(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></div>
-      </div>
-      <div class="mat-card-row">
-        <div class="mc-field"><span class="lbl">纱长</span><input type="number" value="${m.yarnLen}" placeholder="28" min="0" step="0.1" onchange="cardValueChanged(${m.id},'yarnLen',this.value)" style="max-width:65px;"><span class="tiny">cm/100针</span></div>
-        <div class="mc-field"><span class="lbl">路数</span><input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="cardValueChanged(${m.id},'luShu',this.value)" style="max-width:50px;"></div>
-      </div>
-    </div>`).join('');
-}
-
-// ── 成分占比 + 产量 ──
-// 手机卡片的统一 onchange 处理：只存数据+刷新计算结果，不替换任何 DOM
-function cardValueChanged(id, field, val) {
-  const m = materials.find(x => x.id === id);
-  if (!m) return;
-  m[field] = val;
-  saveAll();
-  updateCalcOnly();
-}
-
-// 轻量更新：只刷新计算结果文字，不替换任何输入框（手机端关键！）
-function updateCalcOnly() {
-  // 成分占比
-  const mats = materials.map(m => {
-    const spec = parseFloat(m.spec) || 0, yarnLen = parseFloat(m.yarnLen) || 0, luShu = parseFloat(m.luShu) || 0;
-    if (!spec || !yarnLen) return null;
-    const L = yarnLen * 10 / 100;
-    const conv = UNIT_CONV[m.unit];
-    const S = conv ? conv.convert(spec) : spec;
-    if (!S || S <= 0) return null;
-    const G = (L * 590.5) / (S * 1000);
-    return { id: m.id, G, luShu };
-  }).filter(r => r !== null);
-
-  if (mats.length > 0) {
-    const weightedG = mats.reduce((s, r) => s + r.G * r.luShu, 0);
-    mats.forEach(r => {
-      const pct = weightedG > 0 ? (r.G * r.luShu / weightedG * 100) : 0;
-      const el = document.getElementById('prop-' + r.id);
-      if (el) el.textContent = pct.toFixed(2) + '%';
-      const ce = document.getElementById('propCard-' + r.id);
-      if (ce) ce.textContent = pct.toFixed(2) + '%';
-    });
-
-    // 产量
-    const Z = parseFloat(document.getElementById('totalNeedles').value) || 0;
-    const n = parseFloat(document.getElementById('speed').value) || 0;
-    const eta = parseFloat(document.getElementById('efficiency').value) || 0;
-    const price = parseFloat(document.getElementById('unitPrice').value) || 0;
-    const rollW = parseFloat(document.getElementById('rollWeight').value) || 25;
-    const totalLuShu = mats.reduce((s, r) => s + r.luShu, 0);
-    if (Z > 0 && n > 0 && eta > 0 && totalLuShu > 0) {
-      const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * Z;
-      const Q_day = G_rev * n * eta * 1.44 / 1000;
-      const val_day = Q_day * price;
-      const dailyRevol = n * 60 * 24 * eta;
-      const doff = dailyRevol > 0 ? rollW * dailyRevol / Q_day : 0;
-      document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
-      document.getElementById('dailyValue').textContent = val_day.toFixed(2);
-      document.getElementById('doffRevol').textContent = doff.toFixed(1);
-    }
-  }
-
-  // 成本
-  calcCost();
-}
-function calcAll() {
-  const mats = materials.map(m => {
-    const spec = parseFloat(m.spec) || 0, yarnLen = parseFloat(m.yarnLen) || 0, luShu = parseFloat(m.luShu) || 0;
-    if (!spec || !yarnLen) return null;
-    const L = yarnLen * 10 / 100;
-    const conv = UNIT_CONV[m.unit];
-    const S = conv ? conv.convert(spec) : spec;
-    if (!S || S <= 0) return null;
-    const G = (L * 590.5) / (S * 1000);
-    return { ...m, L, S, G, luShu };
-  }).filter(r => r !== null);
-
-  const rs = document.getElementById('resultSheet');
-  if (!rs) return;
-  rs.style.display = 'block';
-
-  if (mats.length === 0) {
-    document.getElementById('dailyYield').textContent = '—';
-    document.getElementById('dailyValue').textContent = '—';
-    document.getElementById('doffRevol').textContent = '—';
-    return;
-  }
-
-  // 成分占比
-  const weightedG = mats.reduce((s, r) => s + r.G * r.luShu, 0);
-  mats.forEach(r => {
-    const pct = weightedG > 0 ? (r.G * r.luShu / weightedG * 100) : 0;
-    const el = document.getElementById('prop-' + r.id);
-    if (el) el.textContent = pct.toFixed(2) + '%';
-    const ce = document.getElementById('propCard-' + r.id);
-    if (ce) ce.textContent = pct.toFixed(2) + '%';
-  });
-
-  // 产量
-  const Z = parseFloat(document.getElementById('totalNeedles').value) || 0;
-  const n = parseFloat(document.getElementById('speed').value) || 0;
-  const eta = parseFloat(document.getElementById('efficiency').value) || 0;
-  const price = parseFloat(document.getElementById('unitPrice').value) || 0;
-  const rollW = parseFloat(document.getElementById('rollWeight').value) || 25;
-  const totalLuShu = mats.reduce((s, r) => s + r.luShu, 0);
-
-  if (Z > 0 && n > 0 && eta > 0 && totalLuShu > 0) {
-    const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * Z;
-    const Q_day = G_rev * n * eta * 1.44 / 1000;
-    const val_day = Q_day * price;
-    const dailyRevol = n * 60 * 24 * eta;
-    const doff = dailyRevol > 0 ? rollW * dailyRevol / Q_day : 0;
-    document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
-    document.getElementById('dailyValue').textContent = val_day.toFixed(2);
-    document.getElementById('doffRevol').textContent = doff.toFixed(1);
-  } else {
-    document.getElementById('dailyYield').textContent = '—';
-    document.getElementById('dailyValue').textContent = '—';
-    document.getElementById('doffRevol').textContent = '—';
-  }
-}
-
-// ── 成本模块 ──
-function addCostMaterial() {
-  addMaterial('', 's', '', '');
-}
-function removeCostMaterial(id) {
-  if (materials.length <= 1) return;
-  materials = materials.filter(m => m.id !== id);
-  renderAll(); saveAll();
-}
-function updateCostField(id, field, val) {
-  const m = materials.find(x => x.id === id);
-  if (m) { m[field] = val; }
-  renderAll(); saveAll();
-}
-
-function renderCostTable() {
-  const tb = document.getElementById('costBody');
-  const cc = document.getElementById('costCardContainer');
-  if (!tb || !cc) return;
-
-  // PC 表格
-  tb.innerHTML = materials.map((m, i) => `
-    <tr>
-      <td><input type="text" value="${m.costName || ''}" placeholder="如 棉纱" onchange="updateCostField(${m.id},'costName',this.value)"></td>
-      <td><select onchange="updateCostField(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></td>
-      <td><input type="number" value="${m.price}" placeholder="如 32000" min="0" step="100" onchange="updateCostField(${m.id},'price',this.value)"></td>
-      <td><input type="number" value="${m.costPct}" placeholder="如 100" min="0" max="100" step="0.01" onchange="updateCostField(${m.id},'costPct',this.value)"></td>
-      <td><input type="number" value="${m.shortWeight}" placeholder="如 0.5" min="0" step="0.01" onchange="updateCostField(${m.id},'shortWeight',this.value)"></td>
-      <td><input type="number" value="${m.lossRate}" placeholder="如 1" min="0" max="100" step="0.1" onchange="updateCostField(${m.id},'lossRate',this.value)"></td>
-      <td class="cost-val" id="costVal-${m.id}">—</td>
-      <td>${materials.length > 1 ? `<button class="del-btn" onclick="removeCostMaterial(${m.id})">×</button>` : ''}</td>
-    </tr>`).join('');
-
-  // 手机卡片（onblur 保存+重渲染）
-  cc.innerHTML = materials.map((m, i) => `
-    <div class="cost-card">
-      <div class="cost-card-header">
-        <span class="num">#${i + 1}</span>
-        <span class="mid-pct">成本 <span id="costValCard-${m.id}">—</span></span>
-        ${materials.length > 1 ? `<button class="card-del" onclick="removeCostMaterial(${m.id})">×</button>` : ''}
-      </div>
-      <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">材料</span><input type="text" value="${m.costName || ''}" placeholder="如 棉纱" onchange="cardValueChanged(${m.id},'costName',this.value)" style="min-width:80px;"></div>
-        <div class="mc-field"><span class="lbl">单位</span><select onchange="cardValueChanged(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></div>
-      </div>
-      <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">单价</span><input type="number" value="${m.price}" placeholder="32000" min="0" step="100" onchange="cardValueChanged(${m.id},'price',this.value)" style="max-width:80px;"></div>
-        <div class="mc-field"><span class="lbl">占比</span><input type="number" value="${m.costPct}" placeholder="100" min="0" max="100" step="0.01" onchange="cardValueChanged(${m.id},'costPct',this.value)" style="max-width:55px;"><span class="tiny">%</span></div>
-      </div>
-      <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">欠重</span><input type="number" value="${m.shortWeight}" placeholder="0.5" min="0" step="0.01" onchange="cardValueChanged(${m.id},'shortWeight',this.value)" style="max-width:55px;"></div>
-        <div class="mc-field"><span class="lbl">织损率</span><input type="number" value="${m.lossRate}" placeholder="1" min="0" max="100" step="0.1" onchange="cardValueChanged(${m.id},'lossRate',this.value)" style="max-width:55px;"><span class="tiny">%</span></div>
-      </div>
-    </div>`).join('');
-  calcCost();
-}
-
-function calcCost() {
-  const weavingFee = parseFloat(document.getElementById('weavingFee').value) || 0;
-  const extraFee = parseFloat(document.getElementById('extraFee').value) || 0;
-  const rollW = parseFloat(document.getElementById('rollWeight').value) || 25;
-  const tonsPerRoll = 1000 / rollW;
-  let totalYarnCost = 0;
-  const shortW = materials.length > 0 ? (parseFloat(materials[0].shortWeight) || 0) : 0;
-  const lossRate = materials.length > 0 ? (parseFloat(materials[0].lossRate) || 0) : 0;
-
-  materials.forEach(m => {
-    const price = parseFloat(m.price) || 0;
-    const pct = parseFloat(m.costPct) || 0;
-    const cost = (pct / 100) * price;
-    const el = document.getElementById('costVal-' + m.id);
-    if (el) el.textContent = cost.toFixed(2);
-    const ce = document.getElementById('costValCard-' + m.id);
-    if (ce) ce.textContent = cost.toFixed(2);
-    totalYarnCost += cost;
-  });
-
-  const shortFee = shortW > 0 ? tonsPerRoll * shortW * (totalYarnCost / 1000) : 0;
-  const lossMatFee = totalYarnCost * (lossRate / 100);
-  const totalLossFee = shortFee + lossMatFee;
-
-  document.getElementById('yarnTotalCost').textContent = totalYarnCost.toFixed(2);
-  document.getElementById('lossFeeDisplay').textContent = totalLossFee.toFixed(2);
-  document.getElementById('greigeTotalCost').textContent = (totalYarnCost + weavingFee + totalLossFee + extraFee).toFixed(2);
-}
-
-// ── 缓存 ──
-function saveAll() {
-  const data = {
-    materials, totalNeedles: document.getElementById('totalNeedles').value,
-    speed: document.getElementById('speed').value, efficiency: document.getElementById('efficiency').value,
-    unitPrice: document.getElementById('unitPrice').value, rollWeight: document.getElementById('rollWeight').value,
-  };
-  localStorage.setItem('slData', JSON.stringify(data));
-}
-function saveCostCache() {
-  localStorage.setItem('slCostData', JSON.stringify({
-    customerName: document.getElementById('customerName').value, follower: document.getElementById('follower').value,
-    weavingFee: document.getElementById('weavingFee').value, extraFee: document.getElementById('extraFee').value,
-  }));
-}
-function loadAll() {
-  try {
-    const raw = localStorage.getItem('slData');
-    if (raw) {
-      const d = JSON.parse(raw);
-      document.getElementById('totalNeedles').value = d.totalNeedles || '';
-      document.getElementById('speed').value = d.speed || '';
-      document.getElementById('efficiency').value = d.efficiency || '';
-      document.getElementById('unitPrice').value = d.unitPrice || '';
-      document.getElementById('rollWeight').value = d.rollWeight || '25';
-      if (d.materials && d.materials.length) {
-        materials = d.materials;
-        idCounter = materials.reduce((max, m) => Math.max(max, m.id), 0);
-        renderAll();
-        return true;
-      }
-    }
-  } catch(e) {}
-  return false;
-}
-function loadCostCache() {
-  try {
-    const raw = localStorage.getItem('slCostData');
-    if (raw) {
-      const d = JSON.parse(raw);
-      document.getElementById('customerName').value = d.customerName || '';
-      document.getElementById('follower').value = d.follower || '';
-      document.getElementById('weavingFee').value = d.weavingFee || '';
-      document.getElementById('extraFee').value = d.extraFee || '';
-    }
-  } catch(e) {}
-}
-
-// ── 其他 ──
-function resetForm() {
-  if (!confirm('确定重置？')) return;
-  materials = []; idCounter = 0;
-  document.getElementById('totalNeedles').value = '';
-  document.getElementById('speed').value = '';
-  document.getElementById('efficiency').value = '';
-  document.getElementById('unitPrice').value = '';
-  document.getElementById('rollWeight').value = '25';
-  document.getElementById('customerName').value = '';
-  document.getElementById('follower').value = '';
-  document.getElementById('weavingFee').value = '';
-  document.getElementById('extraFee').value = '';
-  addMaterial('32', 's', '28', '4');
-  addMaterial('40', 'd_spandex', '26', '1');
-  localStorage.removeItem('slData');
-  localStorage.removeItem('slCostData');
-}
-function toggleTheme() {
-  document.body.classList.toggle('dark');
-  localStorage.setItem('slTheme', document.body.classList.contains('dark') ? 'dark' : 'light');
-}
-function exportImage() {
-  if (!window.html2canvas) {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-    s.onload = () => _capture(document.querySelector('.app'), '生华布行_核算器.png');
-    document.head.appendChild(s);
-  } else { _capture(document.querySelector('.app'), '生华布行_核算器.png'); }
-}
-function exportCostImage() {
-  if (!window.html2canvas) {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-    s.onload = () => _capture(document.getElementById('costModule'), '生华布行_胚布成本.png');
-    document.head.appendChild(s);
-  } else { _capture(document.getElementById('costModule'), '生华布行_胚布成本.png'); }
-}
-function _capture(el, name) {
-  html2canvas(el, { background: getComputedStyle(document.body).getPropertyValue('--paper'), scale: 2, useCORS: true })
-    .then(c => { const a = document.createElement('a'); a.download = name; a.href = c.toDataURL('image/png'); a.click(); });
-}
-
-// ── 启动 ──
-if (localStorage.getItem('slTheme') === 'dark') document.body.classList.add('dark');
-if (!loadAll()) { addMaterial('32', 's', '28', '4'); addMaterial('40', 'd_spandex', '26', '1'); }
-loadCostCache();
-let resizeTimer;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(updateCalcOnly, 300); });
-</script>
-</body>
-</html>
+     1|<!DOCTYPE html>
+     2|<html lang="zh-CN">
+     3|<head>
+     4|<meta charset="UTF-8">
+     5|<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+     6|<title>生华布行 · 针织核算器</title>
+     7|<style>
+     8|  :root {
+     9|    --paper: #f5ebd0;
+    10|    --paper-dark: #1a1a22;
+    11|    --ink: #2c2c2c;
+    12|    --ink-dark: #e0e0e0;
+    13|    --line: #d4cec0;
+    14|    --line-dark: #2d2d3a;
+    15|    --accent: #8b6f47;
+    16|    --accent-light: #c4a97d;
+    17|    --watermark: rgba(139,111,71,0.06);
+    18|    --watermark-dark: rgba(196,169,125,0.05);
+    19|    --card: rgba(255,255,255,0.7);
+    20|    --card-dark: rgba(30,30,38,0.7);
+    21|  }
+    22|  * { margin: 0; padding: 0; box-sizing: border-box; }
+    23|  body {
+    24|    font-family: 'Noto Serif SC', 'STSong', 'SimSun', serif;
+    25|    background: var(--paper);
+    26|    color: var(--ink);
+    27|    min-height: 100vh;
+    28|    padding: 20px;
+    29|    transition: background 0.4s, color 0.4s;
+    30|    position: relative;
+    31|  }
+    32|  body::before {
+    33|    content: '';
+    34|    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    35|    pointer-events: none; z-index: 0;
+    36|    background:
+    37|      radial-gradient(ellipse at 50% 30%, var(--watermark) 0%, transparent 60%),
+    38|      repeating-linear-gradient(90deg, transparent, transparent 8px, var(--line) 8px, var(--line) 8.5px, transparent 8.5px, transparent 20px),
+    39|      repeating-linear-gradient(0deg, transparent, transparent 35px, var(--line) 35px, var(--line) 36px);
+    40|    opacity: 0.5;
+    41|  }
+    42|  body.dark {
+    43|    --paper: #1a1a22; --ink: #e0e0e0; --line: #2d2d3a;
+    44|    --accent: #c4a97d; --card: rgba(30,30,38,0.7);
+    45|  }
+    46|  body.dark::before { opacity: 0.3; }
+    47|  .app { max-width: 960px; margin: 0 auto; position: relative; z-index: 1; }
+    48|  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    49|  .topbar-actions { display: flex; gap: 8px; }
+    50|  .topbar-actions button {
+    51|    padding: 6px 14px; border: 1px solid var(--accent); background: transparent;
+    52|    color: var(--accent); font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.2s;
+    53|  }
+    54|  .topbar-actions button:hover { background: var(--accent); color: #fff; }
+    55|  .header { text-align: center; padding: 20px 0 16px; position: relative; }
+    56|  .header::after { content: ''; display: block; width: 120px; height: 2px; background: var(--accent); margin: 12px auto 0; }
+    57|  .header .brand { font-size: 28px; font-weight: 700; letter-spacing: 6px; color: var(--accent); }
+    58|  .header .brand-en { font-size: 11px; letter-spacing: 3px; color: var(--accent-light); margin-top: 2px; font-family: 'Times New Roman', serif; }
+    59|  .header .title { font-size: 16px; font-weight: 600; margin-top: 8px; color: var(--ink); }
+    60|  .sheet { background: var(--card); border: 1px solid var(--line); padding: 16px 20px; margin-bottom: 12px; transition: background 0.3s; }
+    61|  .grid-2col { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; }
+    62|  .field-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    63|  @media (max-width: 700px) { .grid-2col, .field-row-2 { grid-template-columns: 1fr; } }
+    64|  .field { margin-bottom: 0; }
+    65|  .field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 3px; color: var(--accent); letter-spacing: 1px; }
+    66|  .field label .hint { font-weight: 400; color: var(--accent-light); font-size: 11px; }
+    67|  .field input, .field select {
+    68|    width: 100%; padding: 8px 10px; background: transparent; border: none; border-bottom: 1.5px solid var(--line);
+    69|    color: var(--ink); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s;
+    70|  }
+    71|  .field input:focus, .field select:focus { border-bottom-color: var(--accent); }
+    72|  .field input::placeholder { color: var(--line); font-style: italic; font-size: 12px; }
+    73|
+    74|  /* 材料表格 */
+    75|  .mat-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    76|  .mat-table th { text-align: left; padding: 8px 6px; font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.5px; border-bottom: 2px solid var(--accent-light); }
+    77|  .mat-table td { padding: 6px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
+    78|  .mat-table input, .mat-table select { width: 100%; padding: 6px 4px; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 13px; font-family: inherit; outline: none; }
+    79|  .mat-table select option { background: #f5ebd0; color: #1a1a1a; }
+    80|  .mat-table select:focus { border-bottom-color: var(--accent); }
+    81|  .mat-table .del-btn, .cost-table .del-btn {
+    82|    width: 28px; height: 28px; border: 1px solid #d4a0a0; background: transparent; color: #b07070;
+    83|    cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;
+    84|  }
+    85|  .mat-table .del-btn:hover, .cost-table .del-btn:hover { background: #d4a0a0; color: #fff; }
+    86|  .mat-table .prop-cell { font-weight: 600; color: var(--accent); font-size: 12px; white-space: nowrap; }
+    87|  .add-row-btn {
+    88|    padding: 6px 16px; margin-top: 8px; background: transparent; border: 1px dashed var(--accent-light);
+    89|    color: var(--accent); cursor: pointer; font-size: 12px; font-family: inherit; transition: all 0.2s;
+    90|  }
+    91|  .add-row-btn:hover { background: var(--accent); color: #fff; border-style: solid; }
+    92|
+    93|  /* 结果 */
+    94|  .result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; border: 1px solid var(--accent-light); }
+    95|  .result-item { padding: 16px; text-align: center; border-right: 1px solid var(--accent-light); border-bottom: 1px solid var(--accent-light); }
+    96|  .result-item:last-child { border-right: none; }
+    97|  .result-item .label { font-size: 11px; color: var(--accent); letter-spacing: 1px; margin-bottom: 4px; }
+    98|  .result-item .value { font-size: 22px; font-weight: 700; color: var(--ink); font-family: 'Times New Roman', serif; }
+    99|  .result-item .value .unit { font-size: 12px; font-weight: 400; color: var(--accent-light); margin-left: 2px; }
+   100|
+   101|  .prop-bar-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+   102|  .prop-bar-item .pname { font-size: 12px; min-width: 50px; color: var(--ink); }
+   103|  .prop-bar-item .ptrack { flex: 1; height: 14px; background: var(--line); overflow: hidden; }
+   104|  .prop-bar-item .pfill { height: 100%; background: var(--accent); transition: width 0.3s; }
+   105|  .prop-bar-item .ppct { font-size: 11px; font-weight: 600; min-width: 45px; text-align: right; color: var(--accent); }
+   106|
+   107|  /* 成本模块 */
+   108|  .section-title { font-size: 14px; font-weight: 600; color: var(--accent); letter-spacing: 2px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--accent-light); }
+   109|  .cost-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 6px; }
+   110|  .cost-table th { text-align: left; padding: 5px 4px; font-size: 11px; font-weight: 600; color: var(--accent); border-bottom: 2px solid var(--accent-light); }
+   111|  .cost-table td { padding: 3px 4px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
+   112|  .cost-table input, .cost-table select { width: 100%; padding: 4px; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 13px; font-family: inherit; outline: none; }
+   113|  .cost-table input:focus, .cost-table select:focus { border-bottom-color: var(--accent); }
+   114|  .cost-table select option { background: #f5ebd0; color: #1a1a1a; }
+   115|  .cost-table .cost-val { font-weight: 600; color: var(--accent); font-size: 12px; text-align: right; padding-right: 6px; }
+   116|  .cost-subtotal { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-top: 6px; background: rgba(139,111,71,0.05); border: 1px solid var(--accent-light); font-size: 14px; font-weight: 600; color: var(--ink); }
+   117|  .cost-subtotal span:last-child { color: var(--accent); }
+   118|  .cost-line-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-top: 6px; border: 1px solid var(--line); font-size: 14px; color: var(--ink); }
+   119|  .cost-line-item input { width: 160px; padding: 4px 8px; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 14px; font-family: inherit; outline: none; text-align: right; }
+   120|  .cost-line-item input:focus { border-bottom-color: var(--accent); }
+   121|  .cost-auto { background: rgba(139,111,71,0.04); border-color: var(--accent-light); }
+   122|  .cost-auto span:last-child { font-weight: 600; color: var(--accent); }
+   123|  .cost-grand-total { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; margin-top: 8px; background: rgba(139,111,71,0.1); border: 2px solid var(--accent); font-size: 17px; font-weight: 700; color: var(--ink); }
+   124|  .cost-grand-total span:last-child { color: var(--accent); }
+   125|
+   126|  @media print {
+   127|    body { background: #f5ebd0 !important; padding: 0; }
+   128|    body::before { display: none !important; }
+   129|    .topbar { display: none !important; }
+   130|    .sheet { break-inside: avoid; border: 1px solid #ccc; background: #faf7f0; }
+   131|    .no-print { display: none !important; }
+   132|  }
+   133|
+   134|  /* ===== 手机端 ===== */
+   135|  @media (max-width: 600px) {
+   136|    body { padding: 8px; }
+   137|    .app { max-width: 100%; }
+   138|    .sheet { padding: 10px; }
+   139|    .header .brand { font-size: 22px; letter-spacing: 4px; }
+   140|    .header .title { font-size: 14px; }
+   141|    .topbar { flex-direction: column; align-items: flex-start; gap: 6px; }
+   142|    .topbar-actions { flex-wrap: wrap; gap: 4px; }
+   143|    .topbar-actions button { font-size: 11px; padding: 5px 10px; }
+   144|    .field-row-2 { grid-template-columns: 1fr 1fr; gap: 6px; }
+   145|    .grid-2col { grid-template-columns: 1fr; }
+   146|    input, select, textarea { touch-action: manipulation; }
+   147|    .field label { font-size: 11px; }
+   148|    .field input, .field select { font-size: 14px; padding: 10px 8px; }
+   149|    .add-row-btn { font-size: 12px; padding: 8px 12px; }
+   150|    .result-grid { grid-template-columns: 1fr 1fr 1fr; }
+   151|    .result-item { padding: 10px; }
+   152|    .result-item .value { font-size: 18px; }
+   153|    .cost-subtotal, .cost-grand-total { font-size: 14px; padding: 8px 10px; }
+   154|    .cost-line-item { flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
+   155|    .cost-line-item input { width: 100%; text-align: left; }
+   156|  }
+   157|  @media (max-width: 420px) {
+   158|    .result-grid { grid-template-columns: 1fr; }
+   159|    .result-item { padding: 8px; border-right: none; border-bottom: 1px solid var(--accent-light); }
+   160|    .result-item:last-child { border-bottom: none; }
+   161|  }
+   162|
+   163|  /* ===== 手机端卡片 ===== */
+   164|  .mat-card-container, .cost-card-container { display: none; }
+   165|  @media (max-width: 600px) {
+   166|    .mat-table-wrapper, .cost-table-wrapper { display: none !important; }
+   167|    .mat-card-container, .cost-card-container { display: block !important; }
+   168|  }
+   169|
+   170|  .mat-card, .cost-card { background: var(--card); border: 1px solid var(--line); padding: 10px 12px; margin-bottom: 8px; position: relative; z-index: 2; }
+   171|  .mat-card-header, .cost-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+   172|  .mat-card-header .num, .cost-card-header .num { font-weight: 700; color: var(--accent); font-size: 13px; }
+   173|  .mat-card-header .mid-pct { font-weight: 700; color: var(--accent); font-size: 16px; flex: 1; text-align: center; }
+   174|  .cost-card-header .mid-pct { font-weight: 700; color: var(--accent); font-size: 14px; flex: 1; text-align: right; }
+   175|  .card-del {
+   176|    width: 28px; height: 28px; border: 1px solid #d4a0a0; background: transparent; color: #b07070;
+   177|    cursor: pointer; font-size: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+   178|  }
+   179|  .card-del:hover { background: #d4a0a0; color: #fff; }
+   180|  .mat-card-row, .cost-card-row { display: flex; flex-wrap: wrap; gap: 5px 8px; margin-bottom: 3px; }
+   181|  .mat-card-row:last-child, .cost-card-row:last-child { margin-bottom: 0; }
+   182|  .mc-field { display: flex; align-items: center; gap: 4px; }
+   183|  .mc-field .lbl { font-size: 11px; color: var(--accent-light); white-space: nowrap; }
+   184|  .mc-field input, .mc-field select {
+   185|    padding: 6px; background: transparent; border: none; border-bottom: 1px solid var(--line);
+   186|    color: var(--ink); font-size: 16px; font-family: inherit; outline: none; width: auto; min-width: 50px;
+   187|  }
+   188|  .mc-field select option { background: #f5ebd0; color: #1a1a1a; }
+   189|  .mc-field .val { font-weight: 700; color: var(--accent); font-size: 14px; }
+   190|  .mc-field .tiny { font-size: 10px; color: var(--accent-light); }
+   191|</style>
+   192|</head>
+   193|<body>
+   194|<div class="app">
+   195|  <div class="topbar">
+   196|    <div></div>
+   197|    <div class="topbar-actions">
+   198|      <button onclick="toggleTheme()">🌓 主题</button>
+   199|      <button onclick="resetForm()">↺ 重置</button>
+   200|      <button onclick="window.print()">🖨 打印</button>
+   201|      <button onclick="exportImage()">📷 导出图片</button>
+   202|    </div>
+   203|  </div>
+   204|
+   205|  <div class="header">
+   206|    <div class="brand">生 华 布 行</div>
+   207|    <div class="brand-en">SHENGHUA FABRIC CO.</div>
+   208|    <div class="title">针织核算器</div>
+   209|  </div>
+   210|
+   211|  <div class="grid-2col">
+   212|    <!-- 左栏：成分占比 -->
+   213|    <div>
+   214|      <div class="sheet">
+   215|        <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:10px;">成分占比</div>
+   216|        <div class="mat-table-wrapper">
+   217|          <table class="mat-table">
+   218|            <thead><tr>
+   219|              <th style="width:32px;">#</th><th style="width:75px;">规格</th><th style="width:80px;">单位</th>
+   220|              <th style="width:95px;">纱长(100针)</th><th style="width:65px;">路数</th><th style="width:60px;">占比</th><th style="width:32px;"></th>
+   221|            </tr></thead>
+   222|            <tbody id="matBody"></tbody>
+   223|          </table>
+   224|        </div>
+   225|        <div class="mat-card-container" id="matCardContainer"></div>
+   226|        <button class="add-row-btn" onclick="addMaterial('', 's', '', '')">+ 添加原料</button>
+   227|      </div>
+   228|    </div>
+   229|
+   230|    <!-- 右栏：机台参数 + 产量 -->
+   231|    <div>
+   232|      <div class="sheet" id="rightPanel">
+   233|        <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:10px;">机 台 参 数</div>
+   234|        <div class="field"><label>总针数 <span class="hint">Z</span></label><input type="number" id="totalNeedles" placeholder="如 1740" oninput="calcAll();saveCache()"></div>
+   235|        <div class="field-row-2">
+   236|          <div class="field"><label>转速 <span class="hint">r/min</span></label><input type="number" id="speed" placeholder="如 22" step="0.1" oninput="calcAll();saveCache()"></div>
+   237|          <div class="field"><label>效率 <span class="hint">0-1</span></label><input type="number" id="efficiency" placeholder="如 0.88" min="0" max="1" step="0.01" oninput="calcAll();saveCache()"></div>
+   238|        </div>
+   239|        <div class="field-row-2">
+   240|          <div class="field"><label>单价 <span class="hint">元/kg</span></label><input type="number" id="unitPrice" placeholder="如 42" step="0.01" oninput="calcAll();saveCache()"></div>
+   241|          <div class="field"><label>布重 <span class="hint">kg/圈</span></label><input type="number" id="rollWeight" placeholder="如 25" step="0.1" value="25" oninput="calcAll();saveCache()"></div>
+   242|        </div>
+   243|        <div id="resultSheet" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--accent-light);">
+   244|          <div style="font-size:12px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:6px;">产 量 结 果</div>
+   245|          <div class="result-grid">
+   246|            <div class="result-item"><div class="label">日产量</div><div class="value"><span id="dailyYield">—</span><span class="unit">kg</span></div></div>
+   247|            <div class="result-item"><div class="label">日产值</div><div class="value"><span id="dailyValue">—</span><span class="unit">元</span></div></div>
+   248|            <div class="result-item"><div class="label">落布圈</div><div class="value"><span id="doffRevol">—</span><span class="unit">圈</span></div></div>
+   249|          </div>
+   250|        </div>
+   251|      </div>
+   252|    </div>
+   253|  </div>
+   254|
+   255|  <!-- 胚布成本 -->
+   256|  <div class="sheet" id="costModule" style="margin-top:12px;">
+   257|    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+   258|      <div class="section-title" style="margin-bottom:0;border:none;">胚 布 成 本 计 算</div>
+   259|      <button onclick="exportCostImage()" style="padding:4px 12px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit;">📷 导出图片</button>
+   260|    </div>
+   261|    <div class="field-row-2">
+   262|      <div class="field"><label>客户名称</label><input type="text" id="customerName" placeholder="请输入" oninput="saveCostCache()"></div>
+   263|      <div class="field"><label>跟单员</label><input type="text" id="follower" placeholder="请输入" oninput="saveCostCache()"></div>
+   264|    </div>
+   265|
+   266|    <div style="font-size:12px;font-weight:600;color:var(--accent);margin:14px 0 6px;letter-spacing:1px;">原料占比</div>
+   267|    <div class="cost-table-wrapper">
+   268|      <table class="cost-table">
+   269|        <thead><tr>
+   270|          <th style="min-width:220px;">材料</th><th style="width:85px;">单位</th><th style="width:85px;">单价(元/吨)</th>
+   271|          <th style="width:70px;">占比%</th><th style="width:70px;">欠重</th><th style="width:70px;">织损率%</th>
+   272|          <th style="width:90px;">成本(元/吨)</th><th style="width:32px;"></th>
+   273|        </tr></thead>
+   274|        <tbody id="costBody"></tbody>
+   275|      </table>
+   276|    </div>
+   277|    <div class="cost-card-container" id="costCardContainer"></div>
+   278|    <button class="add-row-btn" onclick="addCostMaterial()">+ 添加材料</button>
+   279|
+   280|    <div class="cost-subtotal"><span>纱线成本合计</span><span><span id="yarnTotalCost">0.00</span> 元/吨</span></div>
+   281|    <div class="cost-line-item"><label>织造费 <span style="font-weight:400;color:var(--accent-light);font-size:12px;">元/吨</span></label><input type="number" id="weavingFee" placeholder="如 3500" step="10" oninput="calcCost();saveCostCache()"></div>
+   282|    <div class="cost-line-item cost-auto"><label>织损费 <span style="font-weight:400;color:var(--accent-light);font-size:12px;">欠重+织损</span></label><span><span id="lossFeeDisplay">0.00</span> 元/吨</span></div>
+   283|    <div class="cost-line-item"><label>网费/其他 <span style="font-weight:400;color:var(--accent-light);font-size:12px;">元/吨</span></label><input type="number" id="extraFee" placeholder="如 500" step="10" oninput="calcCost();saveCostCache()"></div>
+   284|    <div class="cost-grand-total"><span>胚布总成本</span><span><span id="greigeTotalCost">0.00</span> 元/吨</span></div>
+   285|  </div>
+   286|</div>
+   287|
+   288|<script>
+   289|// ── 数据 ──
+   290|let materials = [], idCounter = 0;
+let costItems = [], costId = 0;
+   291|const UNIT_CONV = {
+   292|  's': { label: '英支 S', convert: v => v },
+   293|  'd_cotton': { label: '丝类 D', convert: d => 5315 / d },
+   294|  'd_spandex': { label: '氨纶 D', convert: d => 5200 / d },
+   295|};
+   296|
+   297|// ── 渲染 ──
+   298|function uOpt(sel) {
+   299|  return Object.entries(UNIT_CONV).map(([k, v]) =>
+   300|    `<option value="${k}" ${k===sel?'selected':''}>${v.label}</option>`).join('');
+   301|}
+   302|function addMaterial(spec, unit, yarnLen, luShu) {
+   303|  const id = ++idCounter;
+   304|  materials.push({ id, spec: spec ?? '', unit: unit || 's', yarnLen: yarnLen ?? '', luShu: luShu ?? '', costName: '', price: '', lossRate: '', costPct: '', shortWeight: '' });
+   305|  renderAll(); saveAll();
+   306|}
+   307|function removeMaterial(id) {
+   308|  if (materials.length <= 1) return;
+   309|  materials = materials.filter(m => m.id !== id);
+   310|  renderAll(); saveAll();
+   311|}
+   312|function updateMat(id, field, val) {
+   313|  const m = materials.find(x => x.id === id);
+   314|  if (m) { m[field] = val; }
+   315|  renderAll();
+   316|  saveAll();
+   317|}
+   318|
+   319|function renderAll() {
+   320|  renderMats(); renderCostTable(); calcAll();
+   321|}
+   322|
+   323|function renderMats() {
+   324|  const tb = document.getElementById('matBody');
+   325|  const cc = document.getElementById('matCardContainer');
+   326|  if (!tb || !cc) return;
+   327|  const raw = materials.filter(m => {
+   328|    const s = parseFloat(m.spec) || 0;
+   329|    const y = parseFloat(m.yarnLen) || 0;
+   330|    return s > 0 && y > 0;
+   331|  });
+   332|
+   333|  // PC 表格
+   334|  tb.innerHTML = raw.map((m, i) => `
+   335|    <tr>
+   336|      <td style="font-weight:600;color:var(--accent);font-size:12px;">${i + 1}</td>
+   337|      <td><input type="number" value="${m.spec}" placeholder="如 32" min="1" step="0.1" onchange="updateMat(${m.id},'spec',this.value)"></td>
+   338|      <td><select onchange="updateMat(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></td>
+   339|      <td><input type="number" value="${m.yarnLen}" placeholder="如 28" min="0" step="0.1" onchange="updateMat(${m.id},'yarnLen',this.value)" style="width:calc(100% - 28px);display:inline;"><span style="font-size:10px;color:var(--accent-light);">cm</span></td>
+   340|      <td><input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="updateMat(${m.id},'luShu',this.value)"></td>
+   341|      <td class="prop-cell" id="prop-${m.id}">—</td>
+   342|      <td>${raw.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}</td>
+   343|    </tr>`).join('');
+   344|
+   345|  // 手机卡片（onblur 保存+重渲染，避免打字时频繁替换 DOM 导致键盘退出）
+   346|  cc.innerHTML = raw.map((m, i) => `
+   347|    <div class="mat-card">
+   348|      <div class="mat-card-header">
+   349|        <span class="num">#${i + 1}</span>
+   350|        <span class="mid-pct">占比 <span id="propCard-${m.id}">—</span></span>
+   351|        ${raw.length > 1 ? `<button class="card-del" onclick="removeMaterial(${m.id})">×</button>` : ''}
+   352|      </div>
+   353|      <div class="mat-card-row">
+   354|        <div class="mc-field"><span class="lbl">规格</span><input type="number" value="${m.spec}" placeholder="32" min="1" step="0.1" onchange="cardValueChanged(${m.id},'spec',this.value)"></div>
+   355|        <div class="mc-field"><span class="lbl">单位</span><select onchange="cardValueChanged(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></div>
+   356|      </div>
+   357|      <div class="mat-card-row">
+   358|        <div class="mc-field"><span class="lbl">纱长</span><input type="number" value="${m.yarnLen}" placeholder="28" min="0" step="0.1" onchange="cardValueChanged(${m.id},'yarnLen',this.value)" style="max-width:65px;"><span class="tiny">cm/100针</span></div>
+   359|        <div class="mc-field"><span class="lbl">路数</span><input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="cardValueChanged(${m.id},'luShu',this.value)" style="max-width:50px;"></div>
+   360|      </div>
+   361|    </div>`).join('');
+   362|}
+   363|
+   364|// ── 成分占比 + 产量 ──
+   365|// 手机卡片的统一 onchange 处理：只存数据+刷新计算结果，不替换任何 DOM
+   366|function cardValueChanged(id, field, val) {
+   367|  const m = materials.find(x => x.id === id);
+   368|  if (!m) return;
+   369|  m[field] = val;
+   370|  saveAll();
+   371|  updateCalcOnly();
+   372|}
+   373|
+   374|// 轻量更新：只刷新计算结果文字，不替换任何输入框（手机端关键！）
+   375|function updateCalcOnly() {
+   376|  // 成分占比
+   377|  const mats = materials.map(m => {
+   378|    const spec = parseFloat(m.spec) || 0, yarnLen = parseFloat(m.yarnLen) || 0, luShu = parseFloat(m.luShu) || 0;
+   379|    if (!spec || !yarnLen) return null;
+   380|    const L = yarnLen * 10 / 100;
+   381|    const conv = UNIT_CONV[m.unit];
+   382|    const S = conv ? conv.convert(spec) : spec;
+   383|    if (!S || S <= 0) return null;
+   384|    const G = (L * 590.5) / (S * 1000);
+   385|    return { id: m.id, G, luShu };
+   386|  }).filter(r => r !== null);
+   387|
+   388|  if (mats.length > 0) {
+   389|    const weightedG = mats.reduce((s, r) => s + r.G * r.luShu, 0);
+   390|    mats.forEach(r => {
+   391|      const pct = weightedG > 0 ? (r.G * r.luShu / weightedG * 100) : 0;
+   392|      const el = document.getElementById('prop-' + r.id);
+   393|      if (el) el.textContent = pct.toFixed(2) + '%';
+   394|      const ce = document.getElementById('propCard-' + r.id);
+   395|      if (ce) ce.textContent = pct.toFixed(2) + '%';
+   396|    });
+   397|
+   398|    // 产量
+   399|    const Z = parseFloat(document.getElementById('totalNeedles').value) || 0;
+   400|    const n = parseFloat(document.getElementById('speed').value) || 0;
+   401|    const eta = parseFloat(document.getElementById('efficiency').value) || 0;
+   402|    const price = parseFloat(document.getElementById('unitPrice').value) || 0;
+   403|    const rollW = parseFloat(document.getElementById('rollWeight').value) || 25;
+   404|    const totalLuShu = mats.reduce((s, r) => s + r.luShu, 0);
+   405|    if (Z > 0 && n > 0 && eta > 0 && totalLuShu > 0) {
+   406|      const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * Z;
+   407|      const Q_day = G_rev * n * eta * 1.44 / 1000;
+   408|      const val_day = Q_day * price;
+   409|      const dailyRevol = n * 60 * 24 * eta;
+   410|      const doff = dailyRevol > 0 ? rollW * dailyRevol / Q_day : 0;
+   411|      document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
+   412|      document.getElementById('dailyValue').textContent = val_day.toFixed(2);
+   413|      document.getElementById('doffRevol').textContent = doff.toFixed(1);
+   414|    }
+   415|  }
+   416|
+   417|  // 成本
+   418|  calcCost();
+   419|}
+   420|function calcAll() {
+   421|  const mats = materials.map(m => {
+   422|    const spec = parseFloat(m.spec) || 0, yarnLen = parseFloat(m.yarnLen) || 0, luShu = parseFloat(m.luShu) || 0;
+   423|    if (!spec || !yarnLen) return null;
+   424|    const L = yarnLen * 10 / 100;
+   425|    const conv = UNIT_CONV[m.unit];
+   426|    const S = conv ? conv.convert(spec) : spec;
+   427|    if (!S || S <= 0) return null;
+   428|    const G = (L * 590.5) / (S * 1000);
+   429|    return { ...m, L, S, G, luShu };
+   430|  }).filter(r => r !== null);
+   431|
+   432|  const rs = document.getElementById('resultSheet');
+   433|  if (!rs) return;
+   434|  rs.style.display = 'block';
+   435|
+   436|  if (mats.length === 0) {
+   437|    document.getElementById('dailyYield').textContent = '—';
+   438|    document.getElementById('dailyValue').textContent = '—';
+   439|    document.getElementById('doffRevol').textContent = '—';
+   440|    return;
+   441|  }
+   442|
+   443|  // 成分占比
+   444|  const weightedG = mats.reduce((s, r) => s + r.G * r.luShu, 0);
+   445|  mats.forEach(r => {
+   446|    const pct = weightedG > 0 ? (r.G * r.luShu / weightedG * 100) : 0;
+   447|    const el = document.getElementById('prop-' + r.id);
+   448|    if (el) el.textContent = pct.toFixed(2) + '%';
+   449|    const ce = document.getElementById('propCard-' + r.id);
+   450|    if (ce) ce.textContent = pct.toFixed(2) + '%';
+   451|  });
+   452|
+   453|  // 产量
+   454|  const Z = parseFloat(document.getElementById('totalNeedles').value) || 0;
+   455|  const n = parseFloat(document.getElementById('speed').value) || 0;
+   456|  const eta = parseFloat(document.getElementById('efficiency').value) || 0;
+   457|  const price = parseFloat(document.getElementById('unitPrice').value) || 0;
+   458|  const rollW = parseFloat(document.getElementById('rollWeight').value) || 25;
+   459|  const totalLuShu = mats.reduce((s, r) => s + r.luShu, 0);
+   460|
+   461|  if (Z > 0 && n > 0 && eta > 0 && totalLuShu > 0) {
+   462|    const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * Z;
+   463|    const Q_day = G_rev * n * eta * 1.44 / 1000;
+   464|    const val_day = Q_day * price;
+   465|    const dailyRevol = n * 60 * 24 * eta;
+   466|    const doff = dailyRevol > 0 ? rollW * dailyRevol / Q_day : 0;
+   467|    document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
+   468|    document.getElementById('dailyValue').textContent = val_day.toFixed(2);
+   469|    document.getElementById('doffRevol').textContent = doff.toFixed(1);
+   470|  } else {
+   471|    document.getElementById('dailyYield').textContent = '—';
+   472|    document.getElementById('dailyValue').textContent = '—';
+   473|    document.getElementById('doffRevol').textContent = '—';
+   474|  }
+   475|}
+   476|
+   477|// ── 成本模块 ──
+   478|function addCostMaterial() {
+   479|  addMaterial('', 's', '', '');
+   480|}
+   481|function removeCostMaterial(id) {
+   482|  if (materials.length <= 1) return;
+   483|  materials = materials.filter(m => m.id !== id);
+   484|  renderAll(); saveAll();
+   485|}
+   486|function updateCostField(id, field, val) {
+   487|  const m = materials.find(x => x.id === id);
+   488|  if (m) { m[field] = val; }
+   489|  renderAll(); saveAll();
+   490|}
+   491|
+   492|function renderCostTable() {
+   493|  const tb = document.getElementById('costBody');
+   494|  const cc = document.getElementById('costCardContainer');
+   495|  if (!tb || !cc) return;
+   496|
+   497|  // PC 表格
+   498|  tb.innerHTML = costItems.map((m, i) => `
+   499|    <tr>
+   500|      <td><input type="text" value="${m.costName || ''}" placeholder="如 棉纱" onchange="updateCostField(${m.id},'costName',this.value)"></td>
+   501|
