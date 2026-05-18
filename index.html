@@ -231,14 +231,14 @@
     <div>
       <div class="sheet" id="rightPanel">
         <div style="font-size:13px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:10px;">机 台 参 数</div>
-        <div class="field"><label>总针数 <span class="hint">Z</span></label><input type="number" id="totalNeedles" placeholder="如 1740" oninput="calcAll();saveCache()"></div>
+        <div class="field"><label>总针数 <span class="hint">Z</span></label><input type="number" id="totalNeedles" placeholder="如 1740" oninput="calcAll();saveAll()"></div>
         <div class="field-row-2">
-          <div class="field"><label>转速 <span class="hint">r/min</span></label><input type="number" id="speed" placeholder="如 22" step="0.1" oninput="calcAll();saveCache()"></div>
-          <div class="field"><label>效率 <span class="hint">0-1</span></label><input type="number" id="efficiency" placeholder="如 0.88" min="0" max="1" step="0.01" oninput="calcAll();saveCache()"></div>
+          <div class="field"><label>转速 <span class="hint">r/min</span></label><input type="number" id="speed" placeholder="如 22" step="0.1" oninput="calcAll();saveAll()"></div>
+          <div class="field"><label>效率 <span class="hint">0-1</span></label><input type="number" id="efficiency" placeholder="如 0.88" min="0" max="1" step="0.01" oninput="calcAll();saveAll()"></div>
         </div>
         <div class="field-row-2">
-          <div class="field"><label>单价 <span class="hint">元/kg</span></label><input type="number" id="unitPrice" placeholder="如 42" step="0.01" oninput="calcAll();saveCache()"></div>
-          <div class="field"><label>布重 <span class="hint">kg/圈</span></label><input type="number" id="rollWeight" placeholder="如 25" step="0.1" value="25" oninput="calcAll();saveCache()"></div>
+          <div class="field"><label>单价 <span class="hint">元/kg</span></label><input type="number" id="unitPrice" placeholder="如 42" step="0.01" oninput="calcAll();saveAll()"></div>
+          <div class="field"><label>布重 <span class="hint">kg/圈</span></label><input type="number" id="rollWeight" placeholder="如 25" step="0.1" value="25" oninput="calcAll();saveAll()"></div>
         </div>
         <div id="resultSheet" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--accent-light);">
           <div style="font-size:12px;font-weight:600;color:var(--accent);letter-spacing:1px;margin-bottom:6px;">产 量 结 果</div>
@@ -599,6 +599,17 @@ function loadAll() {
           costItems = d.costItems;
           costId = costItems.reduce((max, c) => Math.max(max, c.id), 0);
         }
+        // 优先用 slCostData 里的 costItems（更新鲜）
+        const costRaw = localStorage.getItem('slCostData');
+        if (costRaw) {
+          try {
+            const cd = JSON.parse(costRaw);
+            if (cd.costItems && cd.costItems.length) {
+              costItems = cd.costItems;
+              costId = costItems.reduce((max, c) => Math.max(max, c.id), 0);
+            }
+          } catch(e) {}
+        }
         renderAll();
         renderCostTable();
         return true;
@@ -619,6 +630,12 @@ function loadCostCache() {
       document.getElementById('follower').value = d.follower || '';
       document.getElementById('weavingFee').value = d.weavingFee || '';
       document.getElementById('extraFee').value = d.extraFee || '';
+      // 恢复成本材料数组（最关键的遗漏）
+      if (d.costItems && d.costItems.length) {
+        costItems = d.costItems;
+        costId = costItems.reduce((max, c) => Math.max(max, c.id), 0);
+      }
+      renderCostTable();
     }
   } catch(e) {}
 }
@@ -722,7 +739,7 @@ function _capture(el, name) {
 
 // ── 启动 ──
 if (localStorage.getItem('slTheme') === 'dark') document.body.classList.add('dark');
-if (!loadAll()) { addMaterial('32', 's', '28', '4'); addMaterial('40', 'd_spandex', '26', '1'); addCostMaterial(); addCostMaterial(); }
+if (!loadAll()) { addMaterial('32', 's', '28', '4'); addMaterial('40', 'd_spandex', '26', '1'); if (!localStorage.getItem('slCostData')) { addCostMaterial(); addCostMaterial(); } }
 loadCostCache();
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(updateCalcOnly, 300); });
