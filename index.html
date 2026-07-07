@@ -915,6 +915,11 @@ function loadScriptQueue(sources) {
     }));
   }, Promise.reject());
 }
+function cleanExportClone(clone) {
+  clone.querySelectorAll('.topbar, .no-export, .add-row-btn, .del-btn, .card-del').forEach(node => node.remove());
+  clone.querySelectorAll('.mat-table th:last-child, .mat-table td:last-child, .cost-table th:last-child, .cost-table td:last-child').forEach(node => node.remove());
+  clone.querySelectorAll('[onclick]').forEach(node => node.removeAttribute('onclick'));
+}
 async function _capture(el) {
   // html2canvas 对原生 <input> 渲染会裁切文字底部
   // 方案：克隆节点并挂到 body 获取样式，把 input/select 全换成 span
@@ -934,7 +939,7 @@ async function _capture(el) {
   clone.style.setProperty('--card', 'rgba(255,255,255,0.7)');
   clone.style.background = '#f5ebd0';
   clone.style.color = '#2c2c2c';
-  clone.querySelectorAll('.no-export').forEach(node => node.remove());
+  cleanExportClone(clone);
   document.body.appendChild(clone);
 
   try {
