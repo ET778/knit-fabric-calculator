@@ -116,6 +116,7 @@
   .header .brand:empty { display: none; }
   .header .brand-en { font-size: clamp(12px, 1.25vw, 15px); letter-spacing: clamp(3px, 0.52vw, 7px); color: var(--warm); margin-top: 0; font-family: Georgia, 'Times New Roman', serif; font-weight: 700; }
   .header .title { font-size: clamp(24px, 2.55vw, 34px); font-weight: 800; margin-top: 10px; color: var(--ink); }
+  .report-date { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.5px; }
 
   .grid-2col { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.85fr); gap: 16px; align-items: start; }
   .sheet {
@@ -269,6 +270,18 @@
     font-weight: 700;
   }
 
+  .export-clean .topbar,
+  .export-clean .add-row-btn,
+  .export-clean .del-btn,
+  .export-clean .card-del,
+  .export-clean .no-export {
+    display: none !important;
+  }
+  .export-clean .sheet,
+  .export-clean .header {
+    box-shadow: none !important;
+  }
+
   @media print {
     body { background: #fff !important; padding: 0; }
     body::before { display: none !important; }
@@ -313,6 +326,7 @@
     .header .brand { font-size: 22px; letter-spacing: 4px; }
     .header .brand-en { font-size: 12px; letter-spacing: 3px; }
     .header .title { font-size: 24px; margin-top: 8px; }
+    .report-date { font-size: 11px; }
     .sheet { padding: 12px; margin-bottom: 12px; }
     .field-row-2 { grid-template-columns: 1fr 1fr; gap: 8px; }
     .field { margin-bottom: 10px; }
@@ -351,6 +365,7 @@
     <div class="brand"></div>
     <div class="brand-en">SHENGHUA FABRIC CO.</div>
     <div class="title">针织核算器</div>
+    <div class="report-date" data-report-date></div>
   </div>
 
   <div class="grid-2col">
@@ -368,7 +383,7 @@
           </table>
         </div>
         <div class="mat-card-container" id="matCardContainer"></div>
-        <button class="add-row-btn" onclick="addMaterial('', 's', '', '')">+ 添加原料</button>
+        <button class="add-row-btn" onclick="addMaterialFromUi()">+ 添加原料</button>
       </div>
     </div>
 
@@ -400,7 +415,10 @@
   <!-- 胚布成本 -->
   <div class="sheet" id="costModule" style="margin-top:12px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div class="section-title" style="margin-bottom:0;border:none;">胚 布 成 本 计 算</div>
+      <div>
+        <div class="section-title" style="margin-bottom:0;border:none;">胚 布 成 本 计 算</div>
+        <div class="report-date" data-report-date></div>
+      </div>
       <button class="export-btn no-export" onclick="exportCostImage(this)" style="padding:6px 14px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit;">📷 导出图片</button>
     </div>
     <div class="field-row-2">
@@ -420,7 +438,7 @@
       </table>
     </div>
     <div class="cost-card-container" id="costCardContainer"></div>
-    <button class="add-row-btn" onclick="addCostMaterial()">+ 添加材料</button>
+    <button class="add-row-btn" onclick="addCostMaterialFromUi()">+ 添加材料</button>
 
     <div class="cost-subtotal"><span>纱线成本合计</span><span><span id="yarnTotalCost">0.00</span> 元/吨</span></div>
     <div class="cost-line-item"><label>织造费 <span style="font-weight:400;color:var(--accent-light);font-size:12px;">元/吨</span></label><input type="number" id="weavingFee" placeholder="如 3500" step="10" oninput="calcCost();saveCostCache()"></div>
@@ -450,7 +468,12 @@ function addMaterial(spec, unit, yarnLen, luShu) {
   materials.push({ id, spec: spec ?? '', unit: unit || 's', yarnLen: yarnLen ?? '', luShu: luShu ?? '', costName: '', price: '', lossRate: '', costPct: '', shortWeight: '' });
   renderAll(); saveAll();
 }
+function addMaterialFromUi() {
+  syncCurrentInputs();
+  addMaterial('', 's', '', '');
+}
 function removeMaterial(id) {
+  syncCurrentInputs();
   if (materials.length <= 1) return;
   materials = materials.filter(m => m.id !== id);
   renderAll(); saveAll();
@@ -458,8 +481,8 @@ function removeMaterial(id) {
 function updateMat(id, field, val) {
   const m = materials.find(x => x.id === id);
   if (m) { m[field] = val; }
-  renderAll();
   saveAll();
+  updateCalcOnly();
 }
 
 function renderAll() {
@@ -476,10 +499,10 @@ function renderMats() {
   tb.innerHTML = all.map((m, i) => `
     <tr>
       <td style="font-weight:600;color:var(--accent);font-size:12px;">${i + 1}</td>
-      <td><input type="number" value="${m.spec}" placeholder="如 32" min="1" step="0.1" onchange="updateMat(${m.id},'spec',this.value)"></td>
-      <td><select onchange="updateMat(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></td>
-      <td><input type="number" value="${m.yarnLen}" placeholder="如 28" min="0" step="0.1" onchange="updateMat(${m.id},'yarnLen',this.value)" style="width:calc(100% - 28px);display:inline;"><span style="font-size:10px;color:var(--accent-light);">cm</span></td>
-      <td><input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="updateMat(${m.id},'luShu',this.value)"></td>
+      <td><input data-mat-id="${m.id}" data-field="spec" type="number" value="${m.spec}" placeholder="如 32" min="1" step="0.1" onchange="updateMat(${m.id},'spec',this.value)"></td>
+      <td><select data-mat-id="${m.id}" data-field="unit" onchange="updateMat(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></td>
+      <td><input data-mat-id="${m.id}" data-field="yarnLen" type="number" value="${m.yarnLen}" placeholder="如 28" min="0" step="0.1" onchange="updateMat(${m.id},'yarnLen',this.value)" style="width:calc(100% - 28px);display:inline;"><span style="font-size:10px;color:var(--accent-light);">cm</span></td>
+      <td><input data-mat-id="${m.id}" data-field="luShu" type="number" value="${m.luShu}" placeholder="0" min="0" onchange="updateMat(${m.id},'luShu',this.value)"></td>
       <td class="prop-cell" id="prop-${m.id}">—</td>
       <td>${all.length > 1 ? `<button class="del-btn" onclick="removeMaterial(${m.id})">×</button>` : ''}</td>
     </tr>`).join('');
@@ -493,12 +516,12 @@ function renderMats() {
         ${all.length > 1 ? `<button class="card-del" onclick="removeMaterial(${m.id})">×</button>` : ''}
       </div>
       <div class="mat-card-row">
-        <div class="mc-field"><span class="lbl">规格</span><input type="number" value="${m.spec}" placeholder="32" min="1" step="0.1" onchange="cardValueChanged(${m.id},'spec',this.value)"></div>
-        <div class="mc-field"><span class="lbl">单位</span><select onchange="cardValueChanged(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></div>
+        <div class="mc-field"><span class="lbl">规格</span><input data-mat-id="${m.id}" data-field="spec" type="number" value="${m.spec}" placeholder="32" min="1" step="0.1" oninput="cardValueChanged(${m.id},'spec',this.value)"></div>
+        <div class="mc-field"><span class="lbl">单位</span><select data-mat-id="${m.id}" data-field="unit" onchange="cardValueChanged(${m.id},'unit',this.value)">${uOpt(m.unit)}</select></div>
       </div>
       <div class="mat-card-row">
-        <div class="mc-field"><span class="lbl">纱长</span><input type="number" value="${m.yarnLen}" placeholder="28" min="0" step="0.1" onchange="cardValueChanged(${m.id},'yarnLen',this.value)" style="max-width:65px;"><span class="tiny">cm/100针</span></div>
-        <div class="mc-field"><span class="lbl">路数</span><input type="number" value="${m.luShu}" placeholder="0" min="0" onchange="cardValueChanged(${m.id},'luShu',this.value)" style="max-width:50px;"></div>
+        <div class="mc-field"><span class="lbl">纱长</span><input data-mat-id="${m.id}" data-field="yarnLen" type="number" value="${m.yarnLen}" placeholder="28" min="0" step="0.1" oninput="cardValueChanged(${m.id},'yarnLen',this.value)" style="max-width:65px;"><span class="tiny">cm/100针</span></div>
+        <div class="mc-field"><span class="lbl">路数</span><input data-mat-id="${m.id}" data-field="luShu" type="number" value="${m.luShu}" placeholder="0" min="0" oninput="cardValueChanged(${m.id},'luShu',this.value)" style="max-width:50px;"></div>
       </div>
     </div>`).join('');
 }
@@ -624,7 +647,12 @@ function addCostMaterial() {
   renderCostTable();
   saveCostCache();
 }
+function addCostMaterialFromUi() {
+  syncCurrentInputs();
+  addCostMaterial();
+}
 function removeCostMaterial(id) {
+  syncCurrentInputs();
   if (costItems.length <= 1) return;
   costItems = costItems.filter(c => c.id !== id);
   renderCostTable();
@@ -646,12 +674,12 @@ function renderCostTable() {
   // PC 表格 — 用 costItems 而非 materials！
   tb.innerHTML = costItems.map((c, i) => `
     <tr>
-      <td><input type="text" value="${c.costName || ''}" placeholder="如 棉纱" onchange="updateCostField(${c.id},'costName',this.value)"></td>
-      <td><select onchange="updateCostField(${c.id},'unit',this.value)">${uOpt(c.unit)}</select></td>
-      <td><input type="number" value="${c.price}" placeholder="如 32000" min="0" step="100" onchange="updateCostField(${c.id},'price',this.value)"></td>
-      <td><input type="number" value="${c.costPct}" placeholder="如 100" min="0" max="100" step="0.01" onchange="updateCostField(${c.id},'costPct',this.value)"></td>
-      <td><input type="number" value="${c.shortWeight}" placeholder="如 0.5" min="0" step="0.01" onchange="updateCostField(${c.id},'shortWeight',this.value)"></td>
-      <td><input type="number" value="${c.lossRate}" placeholder="如 1" min="0" max="100" step="0.1" onchange="updateCostField(${c.id},'lossRate',this.value)"></td>
+      <td><input data-cost-id="${c.id}" data-field="costName" type="text" value="${c.costName || ''}" placeholder="如 棉纱" onchange="updateCostField(${c.id},'costName',this.value)"></td>
+      <td><select data-cost-id="${c.id}" data-field="unit" onchange="updateCostField(${c.id},'unit',this.value)">${uOpt(c.unit)}</select></td>
+      <td><input data-cost-id="${c.id}" data-field="price" type="number" value="${c.price}" placeholder="如 32000" min="0" step="100" onchange="updateCostField(${c.id},'price',this.value)"></td>
+      <td><input data-cost-id="${c.id}" data-field="costPct" type="number" value="${c.costPct}" placeholder="如 100" min="0" max="100" step="0.01" onchange="updateCostField(${c.id},'costPct',this.value)"></td>
+      <td><input data-cost-id="${c.id}" data-field="shortWeight" type="number" value="${c.shortWeight}" placeholder="如 0.5" min="0" step="0.01" onchange="updateCostField(${c.id},'shortWeight',this.value)"></td>
+      <td><input data-cost-id="${c.id}" data-field="lossRate" type="number" value="${c.lossRate}" placeholder="如 1" min="0" max="100" step="0.1" onchange="updateCostField(${c.id},'lossRate',this.value)"></td>
       <td class="cost-val" id="costVal-${c.id}">—</td>
       <td>${costItems.length > 1 ? `<button class="del-btn" onclick="removeCostMaterial(${c.id})">×</button>` : ''}</td>
     </tr>`).join('');
@@ -665,16 +693,16 @@ function renderCostTable() {
         ${costItems.length > 1 ? `<button class="card-del" onclick="removeCostMaterial(${c.id})">×</button>` : ''}
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">材料</span><input type="text" value="${c.costName || ''}" placeholder="如 棉纱" onchange="cardValueChanged(${c.id},'costName',this.value)" style="min-width:170px;"></div>
-        <div class="mc-field"><span class="lbl">单位</span><select onchange="cardValueChanged(${c.id},'unit',this.value)">${uOpt(c.unit)}</select></div>
+        <div class="mc-field"><span class="lbl">材料</span><input data-cost-id="${c.id}" data-field="costName" type="text" value="${c.costName || ''}" placeholder="如 棉纱" onchange="cardValueChanged(${c.id},'costName',this.value)" style="min-width:170px;"></div>
+        <div class="mc-field"><span class="lbl">单位</span><select data-cost-id="${c.id}" data-field="unit" onchange="cardValueChanged(${c.id},'unit',this.value)">${uOpt(c.unit)}</select></div>
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">单价</span><input type="number" value="${c.price}" placeholder="32000" min="0" step="100" onchange="cardValueChanged(${c.id},'price',this.value)"></div>
-        <div class="mc-field"><span class="lbl">占比</span><input type="number" value="${c.costPct}" placeholder="100" min="0" max="100" step="0.01" onchange="cardValueChanged(${c.id},'costPct',this.value)"><span class="tiny">%</span></div>
+        <div class="mc-field"><span class="lbl">单价</span><input data-cost-id="${c.id}" data-field="price" type="number" value="${c.price}" placeholder="32000" min="0" step="100" onchange="cardValueChanged(${c.id},'price',this.value)"></div>
+        <div class="mc-field"><span class="lbl">占比</span><input data-cost-id="${c.id}" data-field="costPct" type="number" value="${c.costPct}" placeholder="100" min="0" max="100" step="0.01" onchange="cardValueChanged(${c.id},'costPct',this.value)"><span class="tiny">%</span></div>
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">欠重</span><input type="number" value="${c.shortWeight}" placeholder="0.5" min="0" step="0.01" onchange="cardValueChanged(${c.id},'shortWeight',this.value)"></div>
-        <div class="mc-field"><span class="lbl">织损率</span><input type="number" value="${c.lossRate}" placeholder="1" min="0" max="100" step="0.1" onchange="cardValueChanged(${c.id},'lossRate',this.value)"><span class="tiny">%</span></div>
+        <div class="mc-field"><span class="lbl">欠重</span><input data-cost-id="${c.id}" data-field="shortWeight" type="number" value="${c.shortWeight}" placeholder="0.5" min="0" step="0.01" onchange="cardValueChanged(${c.id},'shortWeight',this.value)"></div>
+        <div class="mc-field"><span class="lbl">织损率</span><input data-cost-id="${c.id}" data-field="lossRate" type="number" value="${c.lossRate}" placeholder="1" min="0" max="100" step="0.1" onchange="cardValueChanged(${c.id},'lossRate',this.value)"><span class="tiny">%</span></div>
       </div>
     </div>`).join('');
   calcCost();
@@ -711,7 +739,25 @@ function calcCost() {
 }
 
 // ── 缓存 ──
+function isVisibleInputSource(el) {
+  const wrapper = el.closest('.mat-table-wrapper, .mat-card-container, .cost-table-wrapper, .cost-card-container');
+  return !wrapper || getComputedStyle(wrapper).display !== 'none';
+}
+function syncCurrentInputs() {
+  document.querySelectorAll('[data-mat-id][data-field]').forEach(el => {
+    if (!isVisibleInputSource(el)) return;
+    const m = materials.find(x => x.id === Number(el.dataset.matId));
+    if (m) m[el.dataset.field] = el.value;
+  });
+  document.querySelectorAll('[data-cost-id][data-field]').forEach(el => {
+    if (!isVisibleInputSource(el)) return;
+    const c = costItems.find(x => x.id === Number(el.dataset.costId));
+    if (c) c[el.dataset.field] = el.value;
+  });
+  calcAll();
+}
 function saveAll() {
+  syncCurrentInputs();
   const data = {
     materials, costItems,
     totalNeedles: document.getElementById('totalNeedles').value,
@@ -721,6 +767,7 @@ function saveAll() {
   localStorage.setItem('slData', JSON.stringify(data));
 }
 function saveCostCache() {
+  syncCurrentInputs();
   localStorage.setItem('slCostData', JSON.stringify({
     customerName: document.getElementById('customerName').value, follower: document.getElementById('follower').value,
     weavingFee: document.getElementById('weavingFee').value, extraFee: document.getElementById('extraFee').value,
@@ -823,6 +870,8 @@ async function exportCostImage(btn) {
 }
 async function exportElement(el, name, btn) {
   if (!el) return;
+  syncCurrentInputs();
+  updateReportDate();
   const originalText = btn ? btn.textContent : '';
   try {
     setExportButton(btn, '生成中...', true);
@@ -870,6 +919,7 @@ async function _capture(el) {
   // html2canvas 对原生 <input> 渲染会裁切文字底部
   // 方案：克隆节点并挂到 body 获取样式，把 input/select 全换成 span
   const clone = el.cloneNode(true);
+  clone.classList.add('export-clean');
   clone.style.position = 'fixed';
   clone.style.left = '-9999px';
   clone.style.top = '0';
@@ -973,7 +1023,15 @@ function closeImagePreview() {
 }
 
 // ── 启动 ──
+function updateReportDate() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  document.querySelectorAll('[data-report-date]').forEach(el => { el.textContent = y + '-' + m + '-' + day; });
+}
 if (localStorage.getItem('slTheme') === 'dark') document.body.classList.add('dark');
+updateReportDate();
 if (!loadAll()) { addMaterial('32', 's', '28', '4'); addMaterial('40', 'd_spandex', '26', '1'); if (!localStorage.getItem('slCostData')) { addCostMaterial(); addCostMaterial(); } }
 loadCostCache();
 let resizeTimer;
