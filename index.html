@@ -6,188 +6,333 @@
 <title>生华布行 · 针织核算器</title>
 <style>
   :root {
-    --paper: #f5ebd0;
-    --paper-dark: #1a1a22;
-    --ink: #2c2c2c;
-    --ink-dark: #e0e0e0;
-    --line: #d4cec0;
-    --line-dark: #2d2d3a;
-    --accent: #8b6f47;
-    --accent-light: #c4a97d;
-    --watermark: rgba(139,111,71,0.06);
-    --watermark-dark: rgba(196,169,125,0.05);
-    --card: rgba(255,255,255,0.7);
-    --card-dark: rgba(30,30,38,0.7);
+    --paper: #f4f7f6;
+    --ink: #17212b;
+    --muted: #60707f;
+    --line: #d8e0e2;
+    --line-strong: #b9c7ca;
+    --accent: #157a7e;
+    --accent-dark: #0d5f63;
+    --accent-light: #6aaeb0;
+    --warm: #c9852f;
+    --warm-soft: #fff4e4;
+    --card: rgba(255,255,255,0.94);
+    --field: #f9fbfb;
+    --danger: #b85656;
+    --shadow: 0 14px 32px rgba(30, 51, 63, 0.10);
+    --shadow-soft: 0 6px 18px rgba(30, 51, 63, 0.08);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background: var(--paper); }
   body {
-    font-family: 'Noto Serif SC', 'STSong', 'SimSun', serif;
-    background: var(--paper);
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+    background:
+      linear-gradient(180deg, #eef5f4 0%, #f8faf9 42%, #edf2f0 100%);
     color: var(--ink);
     min-height: 100vh;
-    padding: 20px;
-    transition: background 0.4s, color 0.4s;
+    padding: 24px;
+    transition: background 0.25s, color 0.25s;
     position: relative;
   }
   body::before {
     content: '';
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; z-index: 0;
-    background:
-      radial-gradient(ellipse at 50% 30%, var(--watermark) 0%, transparent 60%),
-      repeating-linear-gradient(90deg, transparent, transparent 8px, var(--line) 8px, var(--line) 8.5px, transparent 8.5px, transparent 20px),
-      repeating-linear-gradient(0deg, transparent, transparent 35px, var(--line) 35px, var(--line) 36px);
-    opacity: 0.5;
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(21,122,126,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(21,122,126,0.045) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: linear-gradient(180deg, rgba(0,0,0,0.45), transparent 78%);
   }
   body.dark {
-    --paper: #1a1a22; --ink: #e0e0e0; --line: #2d2d3a;
-    --accent: #c4a97d; --card: rgba(30,30,38,0.7);
+    --paper: #121820;
+    --ink: #e7edf0;
+    --muted: #a4b2bc;
+    --line: #293641;
+    --line-strong: #3b4b56;
+    --accent: #63c5c5;
+    --accent-dark: #79d6d2;
+    --accent-light: #8fb8ba;
+    --warm: #e1a85d;
+    --warm-soft: rgba(225,168,93,0.13);
+    --card: rgba(24,32,41,0.94);
+    --field: #17212b;
+    --shadow: 0 16px 34px rgba(0,0,0,0.30);
+    --shadow-soft: 0 8px 20px rgba(0,0,0,0.22);
+    background: linear-gradient(180deg, #101820 0%, #151e27 100%);
   }
-  body.dark::before { opacity: 0.3; }
-  .app { max-width: 960px; margin: 0 auto; position: relative; z-index: 1; }
-  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-  .topbar-actions { display: flex; gap: 8px; }
-  .topbar-actions button {
-    padding: 6px 14px; border: 1px solid var(--accent); background: transparent;
-    color: var(--accent); font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.2s;
+  body.dark::before { opacity: 0.5; }
+
+  .app { max-width: 1120px; margin: 0 auto; position: relative; z-index: 1; }
+  .topbar { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .topbar > div:first-child { display: none; }
+  .topbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .topbar-actions button, .add-row-btn, .export-btn {
+    min-height: 36px;
+    padding: 8px 14px;
+    border: 1px solid var(--line-strong);
+    background: var(--card);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    border-radius: 8px;
+    transition: transform 0.16s, border-color 0.16s, background 0.16s, color 0.16s, box-shadow 0.16s;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset;
+    touch-action: manipulation;
   }
-  .topbar-actions button:hover { background: var(--accent); color: #fff; }
-  .header { text-align: center; padding: 20px 0 16px; position: relative; }
-  .header::after { content: ''; display: block; width: 120px; height: 2px; background: var(--accent); margin: 12px auto 0; }
+  .topbar-actions button:hover, .add-row-btn:hover, .export-btn:hover {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-1px);
+  }
+  .export-btn[disabled] { opacity: 0.65; cursor: wait; transform: none; }
+
+  .header {
+    text-align: center;
+    padding: clamp(22px, 4vw, 42px) 18px clamp(18px, 3vw, 28px);
+    margin-bottom: 18px;
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--accent), var(--warm));
+  }
+  .header::after { content: ''; display: block; width: clamp(160px, 34vw, 280px); height: 3px; background: linear-gradient(90deg, var(--accent), var(--warm)); margin: clamp(14px, 2vw, 20px) auto 0; border-radius: 999px; }
   .header .brand { font-size: 28px; font-weight: 700; letter-spacing: 6px; color: var(--accent); }
-  .header .brand-en { font-size: 11px; letter-spacing: 3px; color: var(--accent-light); margin-top: 2px; font-family: 'Times New Roman', serif; }
-  .header .title { font-size: 16px; font-weight: 600; margin-top: 8px; color: var(--ink); }
-  .sheet { background: var(--card); border: 1px solid var(--line); padding: 16px 20px; margin-bottom: 12px; transition: background 0.3s; }
-  .grid-2col { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; }
-  .field-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-  @media (max-width: 700px) { .grid-2col, .field-row-2 { grid-template-columns: 1fr; } }
-  .field { margin-bottom: 0; }
-  .field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 3px; color: var(--accent); letter-spacing: 1px; }
-  .field label .hint { font-weight: 400; color: var(--accent-light); font-size: 11px; }
-  .field input, .field select {
-    width: 100%; padding: 8px 10px; background: transparent; border: none; border-bottom: 1.5px solid var(--line);
-    color: var(--ink); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s;
-  }
-  .field input:focus, .field select:focus { border-bottom-color: var(--accent); }
-  .field input::placeholder { color: var(--line); font-style: italic; font-size: 12px; }
+  .header .brand:empty { display: none; }
+  .header .brand-en { font-size: clamp(12px, 1.25vw, 15px); letter-spacing: clamp(3px, 0.52vw, 7px); color: var(--warm); margin-top: 0; font-family: Georgia, 'Times New Roman', serif; font-weight: 700; }
+  .header .title { font-size: clamp(24px, 2.55vw, 34px); font-weight: 800; margin-top: 10px; color: var(--ink); }
 
-  /* 材料表格 */
-  .mat-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .mat-table th { text-align: left; padding: 8px 6px; font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.5px; border-bottom: 2px solid var(--accent-light); }
-  .mat-table td { padding: 10px 6px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
-  .mat-table input, .mat-table select { width: 100%; padding: 8px 4px; background: transparent; border: none; color: var(--ink); font-size: 13px; font-family: inherit; outline: none; line-height: 1.5; }
-  .mat-table select option { background: #f5ebd0; color: #1a1a1a; }
-  .mat-table select:focus { border-bottom-color: var(--accent); }
-  .mat-table .del-btn, .cost-table .del-btn {
-    width: 28px; height: 28px; border: 1px solid #d4a0a0; background: transparent; color: #b07070;
-    cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;
+  .grid-2col { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.85fr); gap: 16px; align-items: start; }
+  .sheet {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+    box-shadow: var(--shadow-soft);
   }
-  .mat-table .del-btn:hover, .cost-table .del-btn:hover { background: #d4a0a0; color: #fff; }
-  .mat-table .prop-cell { font-weight: 600; color: var(--accent); font-size: 12px; white-space: nowrap; }
-  .add-row-btn {
-    padding: 6px 16px; margin-top: 8px; background: transparent; border: 1px dashed var(--accent-light);
-    color: var(--accent); cursor: pointer; font-size: 12px; font-family: inherit; transition: all 0.2s;
+  .sheet > div[style*="font-size:13px"], .sheet > div[style*="font-size:12px"], .section-title {
+    color: var(--accent) !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    letter-spacing: 1.4px !important;
   }
-  .add-row-btn:hover { background: var(--accent); color: #fff; border-style: solid; }
+  .section-title { padding-bottom: 0; border-bottom: none; }
 
-  /* 结果 */
-  .result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; border: 1px solid var(--accent-light); }
-  .result-item { padding: 16px; text-align: center; border-right: 1px solid var(--accent-light); border-bottom: 1px solid var(--accent-light); }
-  .result-item:last-child { border-right: none; }
-  .result-item .label { font-size: 11px; color: var(--accent); letter-spacing: 1px; margin-bottom: 4px; }
-  .result-item .value { font-size: 22px; font-weight: 700; color: var(--ink); font-family: 'Times New Roman', serif; }
-  .result-item .value .unit { font-size: 12px; font-weight: 400; color: var(--accent-light); margin-left: 2px; }
+  .field-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: var(--muted); letter-spacing: 0; }
+  .field label .hint { font-weight: 500; color: var(--accent-light); font-size: 11px; }
+  .field input, .field select, .cost-line-item input {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--field);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.16s, box-shadow 0.16s, background 0.16s;
+  }
+  .field input:focus, .field select:focus, .cost-line-item input:focus, .mat-table input:focus, .mat-table select:focus, .cost-table input:focus, .cost-table select:focus, .mc-field input:focus, .mc-field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(21,122,126,0.14);
+  }
+  .field input::placeholder, .cost-line-item input::placeholder { color: #9aa8af; font-style: normal; font-size: 12px; }
 
-  .prop-bar-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .mat-table, .cost-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; overflow: hidden; }
+  .mat-table-wrapper, .cost-table-wrapper { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+  .mat-table th, .cost-table th { text-align: left; padding: 10px 8px; font-size: 11px; font-weight: 800; color: var(--muted); letter-spacing: 0.2px; border-bottom: 1px solid var(--line); background: rgba(21,122,126,0.07); white-space: nowrap; }
+  .mat-table td, .cost-table td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .mat-table tr:last-child td, .cost-table tr:last-child td { border-bottom: none; }
+  .mat-table input, .mat-table select, .cost-table input, .cost-table select {
+    width: 100%;
+    padding: 8px 7px;
+    background: var(--field);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--ink);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    line-height: 1.45;
+  }
+  .mat-table select option, .cost-table select option, .mc-field select option { background: #fff; color: #17212b; }
+  .mat-table .prop-cell, .cost-table .cost-val { font-weight: 800; color: var(--accent); font-size: 12px; white-space: nowrap; }
+  .cost-table { min-width: 980px; table-layout: fixed; }
+  .cost-table th:nth-child(1), .cost-table td:nth-child(1) { width: 340px; }
+  .cost-table th:nth-child(2), .cost-table td:nth-child(2) { width: 96px; }
+  .cost-table th:nth-child(3), .cost-table td:nth-child(3) { width: 120px; }
+  .cost-table th:nth-child(4), .cost-table td:nth-child(4),
+  .cost-table th:nth-child(5), .cost-table td:nth-child(5),
+  .cost-table th:nth-child(6), .cost-table td:nth-child(6) { width: 92px; }
+  .cost-table th:nth-child(7), .cost-table td:nth-child(7) { width: 130px; }
+  .cost-table th:nth-child(8), .cost-table td:nth-child(8) { width: 44px; }
+  .cost-table input, .cost-table select { min-width: 0; }
+  .cost-card .mc-field input, .cost-card .mc-field select { min-width: 92px; max-width: none !important; }
+  .cost-card .mc-field:first-child input { min-width: 170px; }
+  .mat-table .del-btn, .cost-table .del-btn, .card-del {
+    width: 28px; height: 28px; border: 1px solid rgba(184,86,86,0.32); background: rgba(184,86,86,0.06); color: var(--danger);
+    cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.16s;
+  }
+  .mat-table .del-btn:hover, .cost-table .del-btn:hover, .card-del:hover { background: var(--danger); color: #fff; }
+  .add-row-btn { margin-top: 10px; border-style: dashed; color: var(--accent); background: rgba(21,122,126,0.06); }
+
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; border: none; }
+  .result-item { padding: 14px 10px; text-align: center; border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(180deg, rgba(255,255,255,0.62), rgba(21,122,126,0.055)); }
+  .result-item:last-child { border-right: 1px solid var(--line); }
+  .result-item .label { font-size: 11px; color: var(--muted); letter-spacing: 0.4px; margin-bottom: 5px; font-weight: 700; }
+  .result-item .value { font-size: 24px; font-weight: 800; color: var(--accent-dark); font-family: Georgia, 'Times New Roman', serif; }
+  .result-item .value .unit { font-size: 12px; font-weight: 600; color: var(--muted); margin-left: 2px; }
+
+  .prop-bar-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
   .prop-bar-item .pname { font-size: 12px; min-width: 50px; color: var(--ink); }
-  .prop-bar-item .ptrack { flex: 1; height: 14px; background: var(--line); overflow: hidden; }
-  .prop-bar-item .pfill { height: 100%; background: var(--accent); transition: width 0.3s; }
-  .prop-bar-item .ppct { font-size: 11px; font-weight: 600; min-width: 45px; text-align: right; color: var(--accent); }
+  .prop-bar-item .ptrack { flex: 1; height: 14px; background: var(--line); overflow: hidden; border-radius: 999px; }
+  .prop-bar-item .pfill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--warm)); transition: width 0.3s; }
+  .prop-bar-item .ppct { font-size: 11px; font-weight: 800; min-width: 45px; text-align: right; color: var(--accent); }
 
-  /* 成本模块 */
-  .section-title { font-size: 14px; font-weight: 600; color: var(--accent); letter-spacing: 2px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--accent-light); }
-  .cost-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 6px; }
-  .cost-table th { text-align: left; padding: 5px 4px; font-size: 11px; font-weight: 600; color: var(--accent); border-bottom: 2px solid var(--accent-light); }
-  .cost-table td { padding: 10px 4px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
-  .cost-table input, .cost-table select { width: 100%; padding: 8px 4px; background: transparent; border: none; color: var(--ink); font-size: 13px; font-family: inherit; outline: none; line-height: 1.5; }
-  .cost-table input:focus, .cost-table select:focus { border-bottom-color: var(--accent); }
-  .cost-table select option { background: #f5ebd0; color: #1a1a1a; }
-  .cost-table .cost-val { font-weight: 600; color: var(--accent); font-size: 12px; text-align: right; padding-right: 6px; }
-  .cost-subtotal { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-top: 6px; background: rgba(139,111,71,0.05); border: 1px solid var(--accent-light); font-size: 14px; font-weight: 600; color: var(--ink); }
+  .cost-subtotal, .cost-line-item, .cost-grand-total { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-radius: 8px; }
+  .cost-subtotal { padding: 10px 12px; margin-top: 8px; background: rgba(21,122,126,0.07); border: 1px solid rgba(21,122,126,0.18); font-size: 14px; font-weight: 800; color: var(--ink); }
   .cost-subtotal span:last-child { color: var(--accent); }
-  .cost-line-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-top: 6px; border: 1px solid var(--line); font-size: 14px; color: var(--ink); }
-  .cost-line-item input { width: 160px; padding: 4px 8px; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 14px; font-family: inherit; outline: none; text-align: right; }
-  .cost-line-item input:focus { border-bottom-color: var(--accent); }
-  .cost-auto { background: rgba(139,111,71,0.04); border-color: var(--accent-light); }
-  .cost-auto span:last-child { font-weight: 600; color: var(--accent); }
-  .cost-grand-total { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; margin-top: 8px; background: rgba(139,111,71,0.1); border: 2px solid var(--accent); font-size: 17px; font-weight: 700; color: var(--ink); }
-  .cost-grand-total span:last-child { color: var(--accent); }
+  .cost-line-item { padding: 10px 12px; margin-top: 8px; border: 1px solid var(--line); font-size: 14px; color: var(--ink); background: var(--card); }
+  .cost-line-item input { width: 180px; text-align: right; }
+  .cost-auto { background: var(--warm-soft); border-color: rgba(201,133,47,0.22); }
+  .cost-auto span:last-child { font-weight: 800; color: var(--warm); }
+  .cost-grand-total { padding: 14px 16px; margin-top: 10px; background: linear-gradient(90deg, var(--accent), var(--accent-dark)); border: 1px solid var(--accent-dark); font-size: 18px; font-weight: 900; color: #fff; box-shadow: var(--shadow-soft); }
+  .cost-grand-total span:last-child { color: #fff; }
+
+  .image-preview-mask {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(12, 19, 25, 0.72);
+  }
+  .image-preview-panel {
+    width: min(94vw, 520px);
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+  }
+  .image-preview-panel img {
+    width: 100%;
+    max-height: 72vh;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid var(--line);
+  }
+  .image-preview-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .image-preview-actions button {
+    min-height: 36px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line-strong);
+    background: var(--field);
+    color: var(--ink);
+    font-family: inherit;
+    font-weight: 700;
+  }
 
   @media print {
-    body { background: #f5ebd0 !important; padding: 0; }
+    body { background: #fff !important; padding: 0; }
     body::before { display: none !important; }
     .topbar { display: none !important; }
-    .sheet { break-inside: avoid; border: 1px solid #ccc; background: #faf7f0; }
-    .no-print { display: none !important; }
+    .sheet, .header { break-inside: avoid; border: 1px solid #d6d6d6; background: #fff; box-shadow: none; }
+    .no-print, .no-export { display: none !important; }
   }
 
-  /* ===== 手机端 ===== */
+  .mat-card-container, .cost-card-container { display: none; }
+  .mat-card, .cost-card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 10px; position: relative; z-index: 2; box-shadow: var(--shadow-soft); }
+  .mat-card-header, .cost-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .mat-card-header .num, .cost-card-header .num { font-weight: 900; color: var(--accent); font-size: 13px; }
+  .mat-card-header .mid-pct, .cost-card-header .mid-pct { font-weight: 900; color: var(--accent); font-size: 15px; flex: 1; text-align: center; }
+  .mat-card-row, .cost-card-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .mat-card-row:last-child, .cost-card-row:last-child { margin-bottom: 0; }
+  .mc-field { display: flex; align-items: center; gap: 5px; min-width: 0; }
+  .mc-field .lbl { font-size: 11px; color: var(--muted); white-space: nowrap; font-weight: 700; }
+  .mc-field input, .mc-field select {
+    padding: 8px 7px;
+    background: var(--field);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--ink);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    width: auto;
+    min-width: 52px;
+    line-height: 1.45;
+  }
+  .mc-field .val { font-weight: 800; color: var(--accent); font-size: 14px; }
+  .mc-field .tiny { font-size: 10px; color: var(--muted); }
+
+  @media (max-width: 700px) { .grid-2col, .field-row-2 { grid-template-columns: 1fr; } }
   @media (max-width: 600px) {
-    body { padding: 8px; }
+    body { padding: 10px; }
     .app { max-width: 100%; }
-    .sheet { padding: 10px; }
+    .topbar { align-items: stretch; gap: 8px; margin-bottom: 10px; }
+    .topbar-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .topbar-actions button { width: 100%; min-height: 42px; font-size: 12px; padding: 8px 10px; }
+    .header { padding: 22px 12px 18px; margin-bottom: 12px; }
     .header .brand { font-size: 22px; letter-spacing: 4px; }
-    .header .title { font-size: 14px; }
-    .topbar { flex-direction: column; align-items: flex-start; gap: 6px; }
-    .topbar-actions { flex-wrap: wrap; gap: 4px; }
-    .topbar-actions button { font-size: 11px; padding: 5px 10px; }
-    .field-row-2 { grid-template-columns: 1fr 1fr; gap: 6px; }
-    .grid-2col { grid-template-columns: 1fr; }
-    input, select, textarea { touch-action: manipulation; }
+    .header .brand-en { font-size: 12px; letter-spacing: 3px; }
+    .header .title { font-size: 24px; margin-top: 8px; }
+    .sheet { padding: 12px; margin-bottom: 12px; }
+    .field-row-2 { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .field { margin-bottom: 10px; }
     .field label { font-size: 11px; }
-    .field input, .field select { font-size: 14px; padding: 10px 8px; }
-    .add-row-btn { font-size: 12px; padding: 8px 12px; }
-    .result-grid { grid-template-columns: 1fr 1fr 1fr; }
-    .result-item { padding: 10px; }
+    .field input, .field select { font-size: 14px; padding: 10px 9px; }
+    .mat-table-wrapper, .cost-table-wrapper { display: none !important; }
+    .mat-card-container, .cost-card-container { display: block !important; }
+    .add-row-btn, .export-btn { width: 100%; min-height: 42px; font-size: 12px; padding: 9px 12px; }
+    .result-grid { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+    .result-item { padding: 10px 6px; }
     .result-item .value { font-size: 18px; }
-    .cost-subtotal, .cost-grand-total { font-size: 14px; padding: 8px 10px; }
-    .cost-line-item { flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
+    .cost-subtotal, .cost-grand-total { font-size: 14px; padding: 10px 12px; }
+    .cost-line-item { flex-wrap: wrap; gap: 7px; padding: 10px 12px; }
     .cost-line-item input { width: 100%; text-align: left; }
   }
   @media (max-width: 420px) {
+    .field-row-2 { grid-template-columns: 1fr; }
     .result-grid { grid-template-columns: 1fr; }
-    .result-item { padding: 8px; border-right: none; border-bottom: 1px solid var(--accent-light); }
-    .result-item:last-child { border-bottom: none; }
+    .result-item { border-right: 1px solid var(--line); }
   }
-
-  /* ===== 手机端卡片 ===== */
-  .mat-card-container, .cost-card-container { display: none; }
-  @media (max-width: 600px) {
-    .mat-table-wrapper, .cost-table-wrapper { display: none !important; }
-    .mat-card-container, .cost-card-container { display: block !important; }
-  }
-
-  .mat-card, .cost-card { background: var(--card); border: 1px solid var(--line); padding: 10px 12px; margin-bottom: 8px; position: relative; z-index: 2; }
-  .mat-card-header, .cost-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
-  .mat-card-header .num, .cost-card-header .num { font-weight: 700; color: var(--accent); font-size: 13px; }
-  .mat-card-header .mid-pct { font-weight: 700; color: var(--accent); font-size: 16px; flex: 1; text-align: center; }
-  .cost-card-header .mid-pct { font-weight: 700; color: var(--accent); font-size: 14px; flex: 1; text-align: right; }
-  .card-del {
-    width: 28px; height: 28px; border: 1px solid #d4a0a0; background: transparent; color: #b07070;
-    cursor: pointer; font-size: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .card-del:hover { background: #d4a0a0; color: #fff; }
-  .mat-card-row, .cost-card-row { display: flex; flex-wrap: wrap; gap: 5px 8px; margin-bottom: 6px; }
-  .mat-card-row:last-child, .cost-card-row:last-child { margin-bottom: 0; }
-  .mc-field { display: flex; align-items: center; gap: 4px; }
-  .mc-field .lbl { font-size: 11px; color: var(--accent-light); white-space: nowrap; }
-  .mc-field input, .mc-field select {
-    padding: 8px 6px; background: transparent; border: none;
-    color: var(--ink); font-size: 16px; font-family: inherit; outline: none; width: auto; min-width: 50px; line-height: 1.5;
-  }
-  .mc-field select option { background: #f5ebd0; color: #1a1a1a; }
-  .mc-field .val { font-weight: 700; color: var(--accent); font-size: 14px; }
-  .mc-field .tiny { font-size: 10px; color: var(--accent-light); }
 </style>
 </head>
 <body>
@@ -198,12 +343,12 @@
       <button onclick="toggleTheme()">🌓 主题</button>
       <button onclick="resetForm()">↺ 重置</button>
       <button onclick="window.print()">🖨 打印</button>
-      <button onclick="exportImage()">📷 导出图片</button>
+      <button class="export-btn no-export" onclick="exportImage(this)">📷 导出图片</button>
     </div>
   </div>
 
   <div class="header">
-    <div class="brand">生 华 布 行</div>
+    <div class="brand"></div>
     <div class="brand-en">SHENGHUA FABRIC CO.</div>
     <div class="title">针织核算器</div>
   </div>
@@ -234,10 +379,10 @@
         <div class="field"><label>总针数 <span class="hint">Z</span></label><input type="number" id="totalNeedles" placeholder="如 1740" oninput="calcAll();saveAll()"></div>
         <div class="field-row-2">
           <div class="field"><label>转速 <span class="hint">r/min</span></label><input type="number" id="speed" placeholder="如 22" step="0.1" oninput="calcAll();saveAll()"></div>
-          <div class="field"><label>效率 <span class="hint">0-1</span></label><input type="number" id="efficiency" placeholder="如 0.88" min="0" max="1" step="0.01" oninput="calcAll();saveAll()"></div>
+          <div class="field"><label>效率 <span class="hint">0-100%</span></label><input type="number" id="efficiency" placeholder="如 85" min="0" max="100" step="0.1" oninput="calcAll();saveAll()"></div>
         </div>
         <div class="field-row-2">
-          <div class="field"><label>单价 <span class="hint">元/kg</span></label><input type="number" id="unitPrice" placeholder="如 42" step="0.01" oninput="calcAll();saveAll()"></div>
+          <div class="field"><label>单价 <span class="hint">元/吨</span></label><input type="number" id="unitPrice" placeholder="如 4500" step="10" oninput="calcAll();saveAll()"></div>
           <div class="field"><label>布重 <span class="hint">kg/圈</span></label><input type="number" id="rollWeight" placeholder="如 25" step="0.1" value="25" oninput="calcAll();saveAll()"></div>
         </div>
         <div id="resultSheet" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--accent-light);">
@@ -256,7 +401,7 @@
   <div class="sheet" id="costModule" style="margin-top:12px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div class="section-title" style="margin-bottom:0;border:none;">胚 布 成 本 计 算</div>
-      <button onclick="exportCostImage()" style="padding:4px 12px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit;">📷 导出图片</button>
+      <button class="export-btn no-export" onclick="exportCostImage(this)" style="padding:6px 14px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit;">📷 导出图片</button>
     </div>
     <div class="field-row-2">
       <div class="field"><label>客户名称</label><input type="text" id="customerName" placeholder="请输入" oninput="saveCostCache()"></div>
@@ -292,7 +437,7 @@ let costItems = [], costId = 0;
 const UNIT_CONV = {
   's': { label: '英支 S', convert: v => v },
   'd_cotton': { label: '丝类 D', convert: d => 5315 / d },
-  'd_spandex': { label: '氨纶 D', convert: d => 5200 / d },
+  'd_spandex': { label: '氨纶 D', convert: d => 5315 / d },
 };
 
 // ── 渲染 ──
@@ -375,7 +520,7 @@ function updateCalcOnly() {
   const mats = materials.map(m => {
     const spec = parseFloat(m.spec) || 0, yarnLen = parseFloat(m.yarnLen) || 0, luShu = parseFloat(m.luShu) || 0;
     if (!spec || !yarnLen) return null;
-    const L = yarnLen * 10 / 100;
+    const L = yarnLen / 100;
     const conv = UNIT_CONV[m.unit];
     const S = conv ? conv.convert(spec) : spec;
     if (!S || S <= 0) return null;
@@ -396,16 +541,16 @@ function updateCalcOnly() {
     // 产量
     const Z = parseFloat(document.getElementById('totalNeedles').value) || 0;
     const n = parseFloat(document.getElementById('speed').value) || 0;
-    const eta = parseFloat(document.getElementById('efficiency').value) || 0;
+    const eta = (parseFloat(document.getElementById('efficiency').value) || 0) / 100;
     const price = parseFloat(document.getElementById('unitPrice').value) || 0;
     const rollW = parseFloat(document.getElementById('rollWeight').value) || 25;
     const totalLuShu = mats.reduce((s, r) => s + r.luShu, 0);
     if (Z > 0 && n > 0 && eta > 0 && totalLuShu > 0) {
-      const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * Z;
-      const Q_day = G_rev * n * eta * 1.44 / 1000;
-      const val_day = Q_day * price;
+      const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * (Z / 100);
+      const Q_day = G_rev * n * eta * 1.44;
+      const val_day = (Q_day / 1000) * price;
       const dailyRevol = n * 60 * 24 * eta;
-      const doff = dailyRevol > 0 ? rollW * dailyRevol / Q_day : 0;
+    const doff = Q_day > 0 ? rollW * dailyRevol / Q_day : 0;
       document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
       document.getElementById('dailyValue').textContent = val_day.toFixed(2);
       document.getElementById('doffRevol').textContent = doff.toFixed(1);
@@ -419,7 +564,7 @@ function calcAll() {
   const mats = materials.map(m => {
     const spec = parseFloat(m.spec) || 0, yarnLen = parseFloat(m.yarnLen) || 0, luShu = parseFloat(m.luShu) || 0;
     if (!spec || !yarnLen) return null;
-    const L = yarnLen * 10 / 100;
+    const L = yarnLen / 100;
     const conv = UNIT_CONV[m.unit];
     const S = conv ? conv.convert(spec) : spec;
     if (!S || S <= 0) return null;
@@ -451,17 +596,17 @@ function calcAll() {
   // 产量
   const Z = parseFloat(document.getElementById('totalNeedles').value) || 0;
   const n = parseFloat(document.getElementById('speed').value) || 0;
-  const eta = parseFloat(document.getElementById('efficiency').value) || 0;
+  const eta = (parseFloat(document.getElementById('efficiency').value) || 0) / 100;
   const price = parseFloat(document.getElementById('unitPrice').value) || 0;
   const rollW = parseFloat(document.getElementById('rollWeight').value) || 25;
   const totalLuShu = mats.reduce((s, r) => s + r.luShu, 0);
 
   if (Z > 0 && n > 0 && eta > 0 && totalLuShu > 0) {
-    const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * Z;
-    const Q_day = G_rev * n * eta * 1.44 / 1000;
-    const val_day = Q_day * price;
+    const G_rev = mats.reduce((s, r) => s + r.G * r.luShu, 0) * (Z / 100);
+    const Q_day = G_rev * n * eta * 1.44;
+    const val_day = (Q_day / 1000) * price;
     const dailyRevol = n * 60 * 24 * eta;
-    const doff = dailyRevol > 0 ? rollW * dailyRevol / Q_day : 0;
+    const doff = Q_day > 0 ? rollW * dailyRevol / Q_day : 0;
     document.getElementById('dailyYield').textContent = Q_day.toFixed(1);
     document.getElementById('dailyValue').textContent = val_day.toFixed(2);
     document.getElementById('doffRevol').textContent = doff.toFixed(1);
@@ -520,16 +665,16 @@ function renderCostTable() {
         ${costItems.length > 1 ? `<button class="card-del" onclick="removeCostMaterial(${c.id})">×</button>` : ''}
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">材料</span><input type="text" value="${c.costName || ''}" placeholder="如 棉纱" onchange="cardValueChanged(${c.id},'costName',this.value)" style="min-width:80px;"></div>
+        <div class="mc-field"><span class="lbl">材料</span><input type="text" value="${c.costName || ''}" placeholder="如 棉纱" onchange="cardValueChanged(${c.id},'costName',this.value)" style="min-width:170px;"></div>
         <div class="mc-field"><span class="lbl">单位</span><select onchange="cardValueChanged(${c.id},'unit',this.value)">${uOpt(c.unit)}</select></div>
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">单价</span><input type="number" value="${c.price}" placeholder="32000" min="0" step="100" onchange="cardValueChanged(${c.id},'price',this.value)" style="max-width:80px;"></div>
-        <div class="mc-field"><span class="lbl">占比</span><input type="number" value="${c.costPct}" placeholder="100" min="0" max="100" step="0.01" onchange="cardValueChanged(${c.id},'costPct',this.value)" style="max-width:55px;"><span class="tiny">%</span></div>
+        <div class="mc-field"><span class="lbl">单价</span><input type="number" value="${c.price}" placeholder="32000" min="0" step="100" onchange="cardValueChanged(${c.id},'price',this.value)"></div>
+        <div class="mc-field"><span class="lbl">占比</span><input type="number" value="${c.costPct}" placeholder="100" min="0" max="100" step="0.01" onchange="cardValueChanged(${c.id},'costPct',this.value)"><span class="tiny">%</span></div>
       </div>
       <div class="cost-card-row">
-        <div class="mc-field"><span class="lbl">欠重</span><input type="number" value="${c.shortWeight}" placeholder="0.5" min="0" step="0.01" onchange="cardValueChanged(${c.id},'shortWeight',this.value)" style="max-width:55px;"></div>
-        <div class="mc-field"><span class="lbl">织损率</span><input type="number" value="${c.lossRate}" placeholder="1" min="0" max="100" step="0.1" onchange="cardValueChanged(${c.id},'lossRate',this.value)" style="max-width:55px;"><span class="tiny">%</span></div>
+        <div class="mc-field"><span class="lbl">欠重</span><input type="number" value="${c.shortWeight}" placeholder="0.5" min="0" step="0.01" onchange="cardValueChanged(${c.id},'shortWeight',this.value)"></div>
+        <div class="mc-field"><span class="lbl">织损率</span><input type="number" value="${c.lossRate}" placeholder="1" min="0" max="100" step="0.1" onchange="cardValueChanged(${c.id},'lossRate',this.value)"><span class="tiny">%</span></div>
       </div>
     </div>`).join('');
   calcCost();
@@ -582,6 +727,12 @@ function saveCostCache() {
     costItems
   }));
 }
+function normalizeEfficiencyInput(value) {
+  if (value === undefined || value === null || value === '') return '';
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return '';
+  return n > 0 && n <= 1 ? String(n * 100) : String(n);
+}
 function loadAll() {
   try {
     const raw = localStorage.getItem('slData');
@@ -589,7 +740,7 @@ function loadAll() {
       const d = JSON.parse(raw);
       document.getElementById('totalNeedles').value = d.totalNeedles || '';
       document.getElementById('speed').value = d.speed || '';
-      document.getElementById('efficiency').value = d.efficiency || '';
+      document.getElementById('efficiency').value = normalizeEfficiencyInput(d.efficiency);
       document.getElementById('unitPrice').value = d.unitPrice || '';
       document.getElementById('rollWeight').value = d.rollWeight || '25';
       if (d.materials && d.materials.length) {
@@ -664,23 +815,58 @@ function toggleTheme() {
   document.body.classList.toggle('dark');
   localStorage.setItem('slTheme', document.body.classList.contains('dark') ? 'dark' : 'light');
 }
-function exportImage() {
-  if (!window.html2canvas) {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-    s.onload = () => _capture(document.querySelector('.app'), '生华布行_核算器.png');
-    document.head.appendChild(s);
-  } else { _capture(document.querySelector('.app'), '生华布行_核算器.png'); }
+async function exportImage(btn) {
+  await exportElement(document.querySelector('.app'), '生华布行_核算器.png', btn);
 }
-function exportCostImage() {
-  if (!window.html2canvas) {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-    s.onload = () => _capture(document.getElementById('costModule'), '生华布行_胚布成本.png');
-    document.head.appendChild(s);
-  } else { _capture(document.getElementById('costModule'), '生华布行_胚布成本.png'); }
+async function exportCostImage(btn) {
+  await exportElement(document.getElementById('costModule'), '生华布行_胚布成本.png', btn);
 }
-function _capture(el, name) {
+async function exportElement(el, name, btn) {
+  if (!el) return;
+  const originalText = btn ? btn.textContent : '';
+  try {
+    setExportButton(btn, '生成中...', true);
+    await ensureHtml2Canvas();
+    const blob = await _capture(el);
+    await saveImageBlob(blob, name);
+    setExportButton(btn, '已生成', true);
+    setTimeout(() => setExportButton(btn, originalText, false), 900);
+  } catch (err) {
+    console.error(err);
+    setExportButton(btn, originalText, false);
+    alert('导出图片失败，请检查网络后重试。');
+  }
+}
+function setExportButton(btn, text, disabled) {
+  if (!btn) return;
+  btn.textContent = text;
+  btn.disabled = disabled;
+}
+function ensureHtml2Canvas() {
+  if (window.html2canvas) return Promise.resolve();
+  if (window.__html2canvasLoading) return window.__html2canvasLoading;
+  const sources = [
+    'html2canvas.min.js',
+    'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+  ];
+  window.__html2canvasLoading = loadScriptQueue(sources)
+    .then(() => window.html2canvas ? undefined : Promise.reject(new Error('html2canvas load failed')))
+    .finally(() => { window.__html2canvasLoading = null; });
+  return window.__html2canvasLoading;
+}
+function loadScriptQueue(sources) {
+  return sources.reduce((chain, src) => {
+    return chain.catch(() => new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    }));
+  }, Promise.reject());
+}
+async function _capture(el) {
   // html2canvas 对原生 <input> 渲染会裁切文字底部
   // 方案：克隆节点并挂到 body 获取样式，把 input/select 全换成 span
   const clone = el.cloneNode(true);
@@ -688,6 +874,7 @@ function _capture(el, name) {
   clone.style.left = '-9999px';
   clone.style.top = '0';
   clone.style.zIndex = '-1';
+  clone.style.width = el.offsetWidth + 'px';
   // 强制浅色主题色值，不受 dark mode 影响
   clone.style.setProperty('--paper', '#f5ebd0');
   clone.style.setProperty('--ink', '#2c2c2c');
@@ -697,44 +884,92 @@ function _capture(el, name) {
   clone.style.setProperty('--card', 'rgba(255,255,255,0.7)');
   clone.style.background = '#f5ebd0';
   clone.style.color = '#2c2c2c';
+  clone.querySelectorAll('.no-export').forEach(node => node.remove());
   document.body.appendChild(clone);
 
-  // 替换输入框（先 append 才能 getComputedStyle）
-  clone.querySelectorAll('input').forEach(inp => {
-    const span = document.createElement('span');
-    span.textContent = inp.value || inp.placeholder || '';
-    span.style.cssText = getComputedStyle(inp).cssText;
-    span.style.display = 'inline-block';
-    span.style.minHeight = '30px';
-    span.style.lineHeight = '30px';
-    span.style.padding = '2px 4px';
-    span.style.border = 'none';
-    span.style.outline = 'none';
-    span.style.background = 'transparent';
-    span.style.color = '#2c2c2c';
-    inp.parentNode.replaceChild(span, inp);
-  });
-  // 替换下拉框
-  clone.querySelectorAll('select').forEach(sel => {
-    const span = document.createElement('span');
-    span.textContent = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
-    span.style.cssText = getComputedStyle(sel).cssText;
-    span.style.display = 'inline-block';
-    span.style.minHeight = '30px';
-    span.style.lineHeight = '30px';
-    span.style.padding = '2px 4px';
-    span.style.border = 'none';
-    span.style.outline = 'none';
-    span.style.background = 'transparent';
-    span.style.color = '#2c2c2c';
-    sel.parentNode.replaceChild(span, sel);
-  });
-
-  html2canvas(clone, { background: '#f5ebd0', scale: 2, useCORS: true })
-    .then(c => {
-      document.body.removeChild(clone);
-      const a = document.createElement('a'); a.download = name; a.href = c.toDataURL('image/png'); a.click();
+  try {
+    // 替换输入框（先 append 才能 getComputedStyle）
+    clone.querySelectorAll('input').forEach(inp => {
+      const span = document.createElement('span');
+      span.textContent = inp.value || inp.placeholder || '';
+      span.style.cssText = getComputedStyle(inp).cssText;
+      span.style.display = 'inline-block';
+      span.style.minHeight = '30px';
+      span.style.lineHeight = '30px';
+      span.style.padding = '2px 4px';
+      span.style.border = 'none';
+      span.style.outline = 'none';
+      span.style.background = 'transparent';
+      span.style.color = '#2c2c2c';
+      inp.parentNode.replaceChild(span, inp);
     });
+    // 替换下拉框
+    clone.querySelectorAll('select').forEach(sel => {
+      const span = document.createElement('span');
+      span.textContent = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
+      span.style.cssText = getComputedStyle(sel).cssText;
+      span.style.display = 'inline-block';
+      span.style.minHeight = '30px';
+      span.style.lineHeight = '30px';
+      span.style.padding = '2px 4px';
+      span.style.border = 'none';
+      span.style.outline = 'none';
+      span.style.background = 'transparent';
+      span.style.color = '#2c2c2c';
+      sel.parentNode.replaceChild(span, sel);
+    });
+
+    const scale = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+    const canvas = await html2canvas(clone, { background: '#f5ebd0', scale, useCORS: true, windowWidth: el.scrollWidth });
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('canvas blob failed')), 'image/png');
+    });
+  } finally {
+    document.body.removeChild(clone);
+  }
+}
+async function saveImageBlob(blob, name) {
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile|MicroMessenger/i.test(navigator.userAgent) || matchMedia('(pointer: coarse)').matches;
+  if (isMobile) {
+    const dataUrl = await blobToDataURL(blob);
+    showImagePreview(dataUrl, name);
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+function showImagePreview(src, name) {
+  closeImagePreview();
+  const mask = document.createElement('div');
+  mask.className = 'image-preview-mask no-export';
+  mask.innerHTML = `
+    <div class="image-preview-panel">
+      <img src="${src}" alt="${name}">
+      <div class="image-preview-actions">
+        <span>长按图片保存到相册</span>
+        <button type="button" onclick="closeImagePreview()">关闭</button>
+      </div>
+    </div>`;
+  mask.addEventListener('click', e => { if (e.target === mask) closeImagePreview(); });
+  document.body.appendChild(mask);
+}
+function closeImagePreview() {
+  const old = document.querySelector('.image-preview-mask');
+  if (old) old.remove();
 }
 
 // ── 启动 ──
